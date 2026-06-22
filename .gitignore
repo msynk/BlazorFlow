@@ -1,0 +1,16 @@
+## .NET build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+## User / IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+
+## Misc
+*.log

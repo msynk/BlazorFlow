@@ -1,0 +1,66 @@
+@page "/"
+
+<PageTitle>BlazorFlow - Basic</PageTitle>
+
+<div class="demo-header">
+    <h3>Basic Flow</h3>
+    <p class="text-muted">
+        Drag nodes, drag from a handle to another node to connect, scroll to zoom, drag the background to pan.
+        Click a node/edge to select, press <kbd>Delete</kbd> to remove. Hold <kbd>Shift</kbd> for multi-select.
+    </p>
+</div>
+
+<div class="demo-canvas">
+    <FlowCanvas Nodes="_nodes"
+                Edges="_edges"
+                FitViewOnInit="true"
+                OnConnect="OnConnect">
+        <Background Variant="BackgroundVariant.Dots" Gap="20" />
+        <Controls />
+        <MiniMap />
+        <Panel Position="top-right">
+            <button class="btn btn-sm btn-primary" @onclick="AddNode">Add node</button>
+        </Panel>
+    </FlowCanvas>
+</div>
+
+@code {
+    private List<Node> _nodes = new();
+    private List<Edge> _edges = new();
+    private int _counter = 4;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input",  Label = "Input Node",  Position = new(250, 25) },
+            new Node { Id = "2",                  Label = "Default Node", Position = new(150, 150) },
+            new Node { Id = "3",                  Label = "Another Node", Position = new(400, 150) },
+            new Node { Id = "4", Type = "output", Label = "Output Node",  Position = new(280, 300) },
+        ];
+
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Animated = true },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4", Label = "edge label" },
+        ];
+    }
+
+    private void AddNode()
+    {
+        _counter++;
+        _nodes.Add(new Node
+        {
+            Id = _counter.ToString(),
+            Label = $"Node {_counter}",
+            Position = new(Random.Shared.Next(50, 450), Random.Shared.Next(50, 350)),
+        });
+    }
+
+    private void OnConnect(Connection c)
+    {
+        // The edge is already added by the canvas; hook here for side effects.
+        Console.WriteLine($"Connected {c.Source} -> {c.Target}");
+    }
+}

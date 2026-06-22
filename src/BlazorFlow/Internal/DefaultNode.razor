@@ -1,0 +1,26 @@
+@namespace BlazorFlow.Internal
+
+@* Built-in node content for the "default", "input", "output" and "group" node types. *@
+
+@if (Node.Type == "group")
+{
+    <div class="blazorflow__node-label">@Node.Label</div>
+}
+else
+{
+    @if (Node.Type != "input")
+    {
+        <Handle Type="HandleType.Target" Position="Position.Top" />
+    }
+
+    <div class="blazorflow__node-label">@(Node.Label ?? Node.Id)</div>
+
+    @if (Node.Type != "output")
+    {
+        <Handle Type="HandleType.Source" Position="Position.Bottom" />
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public Node Node { get; set; } = default!;
+}

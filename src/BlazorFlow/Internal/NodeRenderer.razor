@@ -1,0 +1,59 @@
+@namespace BlazorFlow.Internal
+@using Microsoft.AspNetCore.Components.Rendering
+
+<div class="blazorflow__node blazorflow__node-@Node.Type @(Node.Selected ? "selected" : null) @Node.Class"
+     data-id="@Node.Id"
+     style="@StyleString"
+     @onpointerdown="OnPointerDown"
+     @onpointerdown:stopPropagation="true">
+    <CascadingValue Value="_nodeContext" IsFixed="true">
+        @if (Template is not null)
+        {
+            @Template(Node)
+        }
+        else
+        {
+            <DefaultNode Node="Node" />
+        }
+    </CascadingValue>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Node Node { get; set; } = default!;
+    [Parameter] public RenderFragment<Node>? Template { get; set; }
+    [Parameter] public EventCallback<PointerEventArgs> OnDragStart { get; set; }
+
+    private FlowNodeContext _nodeContext = default!;
+
+    protected override void OnParametersSet()
+    {
+        if (_nodeContext is null || !ReferenceEquals(_nodeContext.Node, Node))
+        {
+            _nodeContext = new FlowNodeContext { Node = Node };
+        }
+    }
+
+    private string StyleString
+    {
+        get
+        {
+            var s = string.Create(CultureInfo.InvariantCulture,
+                $"transform:translate({Node.AbsolutePosition.X}px,{Node.AbsolutePosition.Y}px);");
+            if (Node.Width is { } w)
+                s += string.Create(CultureInfo.InvariantCulture, $"width:{w}px;");
+            if (Node.Height is { } h)
+                s += string.Create(CultureInfo.InvariantCulture, $"height:{h}px;");
+            if (Node.ZIndex is { } z)
+                s += $"z-index:{z};";
+            if (!string.IsNullOrEmpty(Node.Style))
+                s += Node.Style;
+            return s;
+        }
+    }
+
+    private async Task OnPointerDown(PointerEventArgs e)
+    {
+        if (e.Button == 0 && Node.Draggable)
+            await OnDragStart.InvokeAsync(e);
+    }
+}

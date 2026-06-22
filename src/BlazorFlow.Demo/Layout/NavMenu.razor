@@ -1,0 +1,43 @@
+<div class="nav-top">
+    <a class="brand" href="">
+        <span class="brand-mark">@((MarkupString)LogoSvg)</span>
+        <span class="brand-text">BlazorFlow</span>
+    </a>
+    <button class="nav-toggle" title="Toggle navigation" @onclick="ToggleNavMenu">
+        <span></span><span></span><span></span>
+    </button>
+</div>
+
+<nav class="@NavMenuCssClass" @onclick="CollapseNavMenu">
+    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+        <span class="nav-icon">●</span> Basic Flow
+    </NavLink>
+    <NavLink class="nav-link" href="custom-nodes">
+        <span class="nav-icon">◆</span> Custom Nodes
+    </NavLink>
+    <NavLink class="nav-link" href="edge-types">
+        <span class="nav-icon">↳</span> Edge Types
+    </NavLink>
+    <NavLink class="nav-link" href="advanced">
+        <span class="nav-icon">▣</span> Groups &amp; Resizing
+    </NavLink>
+</nav>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "nav-menu collapse" : "nav-menu";
+
+    private const string LogoSvg =
+        "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>" +
+        "<rect x='2' y='3' width='7' height='5' rx='1.5' fill='#a5b4fc'/>" +
+        "<rect x='15' y='16' width='7' height='5' rx='1.5' fill='#818cf8'/>" +
+        "<rect x='15' y='3' width='7' height='5' rx='1.5' fill='#c7d2fe'/>" +
+        "<path d='M9 5.5h2.5a2 2 0 0 1 2 2v9a2 2 0 0 0 2 2H15' stroke='#e0e7ff' stroke-width='1.5' fill='none'/>" +
+        "<path d='M9 5.5h9' stroke='#e0e7ff' stroke-width='1.5'/>" +
+        "</svg>";
+
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+
+    private void CollapseNavMenu() => collapseNavMenu = true;
+}

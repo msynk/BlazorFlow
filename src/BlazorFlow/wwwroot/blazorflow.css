@@ -1,0 +1,294 @@
+/* BlazorFlow core styles */
+
+.blazorflow {
+    --bf-bg: #fafafa;
+    --bf-node-bg: #ffffff;
+    --bf-node-border: #1a192b;
+    --bf-node-color: #222;
+    --bf-node-selected: #2563eb;
+    --bf-edge-stroke: #b1b1b7;
+    --bf-edge-selected: #2563eb;
+    --bf-connection-stroke: #2563eb;
+    --bf-handle-bg: #1a192b;
+    --bf-handle-valid: #22c55e;
+
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bf-bg);
+    touch-action: none;
+    user-select: none;
+    outline: none;
+    cursor: grab;
+}
+
+.blazorflow:active {
+    cursor: grabbing;
+}
+
+.blazorflow__viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.blazorflow__edges {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.blazorflow__edges .blazorflow__edge {
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.blazorflow__edge-path {
+    transition: stroke 0.1s ease;
+}
+
+.blazorflow__edge.selected .blazorflow__edge-path {
+    stroke: var(--bf-edge-selected) !important;
+}
+
+.blazorflow__edge.animated .blazorflow__edge-path {
+    stroke-dasharray: 6 4;
+    animation: bf-dash 0.6s linear infinite;
+}
+
+@keyframes bf-dash {
+    to { stroke-dashoffset: -10; }
+}
+
+.blazorflow__edge-label-bg {
+    fill: #fff;
+    fill-opacity: 0.85;
+}
+
+.blazorflow__edge-label {
+    font: 11px/1 sans-serif;
+    fill: #333;
+}
+
+/* Nodes */
+.blazorflow__node {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    min-width: 80px;
+    padding: 10px 14px;
+    border: 1px solid var(--bf-node-border);
+    border-radius: 6px;
+    background: var(--bf-node-bg);
+    color: var(--bf-node-color);
+    font: 12px/1.4 sans-serif;
+    text-align: center;
+    cursor: grab;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.blazorflow__node:active {
+    cursor: grabbing;
+}
+
+.blazorflow__node.selected {
+    border-color: var(--bf-node-selected);
+    box-shadow: 0 0 0 2px var(--bf-node-selected);
+}
+
+.blazorflow__node-input {
+    border-color: #0041d0;
+}
+
+.blazorflow__node-output {
+    border-color: #ff0072;
+}
+
+.blazorflow__node-label {
+    pointer-events: none;
+}
+
+/* Handles */
+.blazorflow__handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--bf-handle-bg);
+    border: 1px solid #fff;
+    cursor: crosshair;
+    z-index: 2;
+}
+
+.blazorflow__handle-top    { top: 0;    left: 50%; transform: translate(-50%, -50%); }
+.blazorflow__handle-bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+.blazorflow__handle-left   { left: 0;   top: 50%;  transform: translate(-50%, -50%); }
+.blazorflow__handle-right  { right: 0;  top: 50%;  transform: translate(50%, -50%); }
+
+.blazorflow__handle:hover,
+.blazorflow__handle-valid {
+    background: var(--bf-handle-valid);
+}
+
+/* Controls */
+.blazorflow__controls {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.blazorflow__controls.horizontal {
+    flex-direction: row;
+}
+
+.blazorflow__controls-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+.blazorflow__controls.horizontal .blazorflow__controls-button {
+    border-bottom: none;
+    border-right: 1px solid #eee;
+}
+
+.blazorflow__controls-button:hover {
+    background: #f4f4f4;
+}
+
+/* MiniMap */
+.blazorflow__minimap {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 5;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid #e2e2e2;
+    border-radius: 4px;
+}
+
+.blazorflow__minimap-node {
+    stroke: #fff;
+    stroke-width: 1;
+}
+
+.blazorflow__minimap-node.selected {
+    fill: var(--bf-node-selected);
+}
+
+/* Panels */
+.blazorflow__panel {
+    position: absolute;
+    z-index: 5;
+    margin: 12px;
+}
+
+.blazorflow__panel-top-left     { top: 0; left: 0; }
+.blazorflow__panel-top-right    { top: 0; right: 0; }
+.blazorflow__panel-bottom-left  { bottom: 0; left: 0; }
+.blazorflow__panel-bottom-right { bottom: 0; right: 0; }
+.blazorflow__panel-top-center   { top: 0; left: 50%; transform: translateX(-50%); }
+.blazorflow__panel-bottom-center{ bottom: 0; left: 50%; transform: translateX(-50%); }
+
+/* Group / sub-flow container nodes */
+.blazorflow__node-group {
+    background: rgba(120, 120, 160, 0.08);
+    border: 1px dashed #9aa0b5;
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: none;
+    cursor: grab;
+}
+
+.blazorflow__node-group .blazorflow__node-label {
+    position: absolute;
+    top: 6px;
+    left: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+/* Node resizer */
+.blazorflow__resize-handle {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border: 1px solid #fff;
+    border-radius: 1px;
+    z-index: 10;
+}
+
+.blazorflow__resize-handle.top-left     { top: 0; left: 0;     transform: translate(-50%, -50%); cursor: nwse-resize; }
+.blazorflow__resize-handle.top-right    { top: 0; right: 0;    transform: translate(50%, -50%);  cursor: nesw-resize; }
+.blazorflow__resize-handle.bottom-left  { bottom: 0; left: 0;  transform: translate(-50%, 50%);  cursor: nesw-resize; }
+.blazorflow__resize-handle.bottom-right { bottom: 0; right: 0; transform: translate(50%, 50%);   cursor: nwse-resize; }
+.blazorflow__resize-handle.top    { top: 0;    left: 50%; transform: translate(-50%, -50%); cursor: ns-resize; }
+.blazorflow__resize-handle.bottom { bottom: 0; left: 50%; transform: translate(-50%, 50%);  cursor: ns-resize; }
+.blazorflow__resize-handle.left   { left: 0;   top: 50%;  transform: translate(-50%, -50%); cursor: ew-resize; }
+.blazorflow__resize-handle.right  { right: 0;  top: 50%;  transform: translate(50%, -50%);  cursor: ew-resize; }
+
+.blazorflow__resize-line {
+    position: absolute;
+    border: 0 solid var(--bf-node-selected);
+    pointer-events: none;
+}
+
+.blazorflow__resize-line.top    { top: 0; left: 0; width: 100%; border-top-width: 1px; }
+.blazorflow__resize-line.bottom { bottom: 0; left: 0; width: 100%; border-bottom-width: 1px; }
+.blazorflow__resize-line.left   { top: 0; left: 0; height: 100%; border-left-width: 1px; }
+.blazorflow__resize-line.right  { top: 0; right: 0; height: 100%; border-right-width: 1px; }
+
+/* Node toolbar */
+.blazorflow__node-toolbar {
+    z-index: 11;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #fff;
+    border: 1px solid #e2e2e2;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    white-space: nowrap;
+}
+
+.blazorflow__node-toolbar button {
+    border: none;
+    background: #f4f4f5;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.blazorflow__node-toolbar button:hover {
+    background: #e4e4e7;
+}
+
+.blazorflow__handle-connectingfrom {
+    background: #ef4444;
+}

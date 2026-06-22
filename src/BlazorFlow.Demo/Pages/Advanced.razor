@@ -1,0 +1,89 @@
+@page "/advanced"
+
+<PageTitle>BlazorFlow - Groups &amp; Resizing</PageTitle>
+
+<div class="demo-header">
+    <h3>Groups, Resizing, Toolbars &amp; Validation</h3>
+    <p class="text-muted">
+        The dashed box is a <strong>group</strong> — drag it and its children move with it.
+        Select the blue node to <strong>resize</strong> it and use its <strong>toolbar</strong>.
+        Connections are <strong>validated</strong>: you can only connect <em>into</em> the "Sink" node.
+    </p>
+</div>
+
+<div class="demo-canvas" style="height: calc(100vh - 250px);">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" IsValidConnection="ValidateConnection">
+        <NodeTemplate Context="node">
+            @if (node.Type == "resizable")
+            {
+                <NodeResizer MinWidth="100" MinHeight="50" />
+                <NodeToolbar Position="Position.Top">
+                    <button class="btn btn-sm" @onclick="() => Recolor(node)">🎨 Recolor</button>
+                    <button class="btn btn-sm" @onclick="() => Remove(node)">🗑 Delete</button>
+                </NodeToolbar>
+                <Handle Type="HandleType.Target" Position="Position.Left" />
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;font-weight:600;">
+                    @node.Label
+                </div>
+                <Handle Type="HandleType.Source" Position="Position.Right" />
+            }
+            else
+            {
+                <BlazorFlow.Internal.DefaultNode Node="node" />
+            }
+        </NodeTemplate>
+
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Cross" Gap="24" />
+            <Controls />
+            <MiniMap />
+        </ChildContent>
+    </FlowCanvas>
+</div>
+
+@code {
+    private List<Node> _nodes = new();
+    private List<Edge> _edges = new();
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            // A group container with two children positioned relative to it.
+            new Node { Id = "group1", Type = "group", Label = "Group A", Position = new(40, 40),  Width = 260, Height = 180 },
+            new Node { Id = "c1", ParentId = "group1", Label = "Child 1", Position = new(30, 50) },
+            new Node { Id = "c2", ParentId = "group1", Label = "Child 2", Position = new(30, 110) },
+
+            // A resizable node with a toolbar.
+            new Node { Id = "r1", Type = "resizable", Label = "Resize me", Position = new(400, 60),
+                       Width = 160, Height = 80, Data = new NodeStyle("#dbeafe"), Style = "background:#dbeafe;" },
+
+            // The only valid connection target.
+            new Node { Id = "sink", Type = "output", Label = "Sink", Position = new(440, 280) },
+        ];
+
+        _edges =
+        [
+            new Edge { Id = "e-c1-r1", Source = "c1", Target = "r1", Type = EdgeType.SmoothStep },
+        ];
+    }
+
+    public record NodeStyle(string Background);
+
+    // Only connections that end at the "sink" node are allowed.
+    private bool ValidateConnection(Connection c) => c.Target == "sink";
+
+    private void Recolor(Node node)
+    {
+        var colors = new[] { "#dbeafe", "#dcfce7", "#fee2e2", "#fef9c3", "#f3e8ff" };
+        var next = colors[Random.Shared.Next(colors.Length)];
+        node.Data = new NodeStyle(next);
+        node.Style = $"background:{next};";
+    }
+
+    private void Remove(Node node)
+    {
+        _nodes.Remove(node);
+        _edges.RemoveAll(e => e.Source == node.Id || e.Target == node.Id);
+    }
+}

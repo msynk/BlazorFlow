@@ -1,0 +1,72 @@
+@namespace BlazorFlow
+
+@if (IsVisible)
+{
+    @* Edge lines *@
+    <div class="blazorflow__resize-line top" style="@LineStyle"></div>
+    <div class="blazorflow__resize-line right" style="@LineStyle"></div>
+    <div class="blazorflow__resize-line bottom" style="@LineStyle"></div>
+    <div class="blazorflow__resize-line left" style="@LineStyle"></div>
+
+    @foreach (var (dir, cssClass) in _controls)
+    {
+        <div class="blazorflow__resize-handle @cssClass"
+             style="@HandleStyle"
+             @onpointerdown="@(e => OnDown(e, dir))"
+             @onpointerdown:stopPropagation="true">
+        </div>
+    }
+}
+
+@code {
+    [CascadingParameter] private FlowNodeContext NodeContext { get; set; } = default!;
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    /// <summary>Show the controls. When null, controls appear only while the node is selected.</summary>
+    [Parameter] public bool? Visible { get; set; }
+
+    [Parameter] public double MinWidth { get; set; } = 40;
+    [Parameter] public double MinHeight { get; set; } = 30;
+    [Parameter] public bool KeepAspectRatio { get; set; }
+
+    /// <summary>Accent color for the resize controls.</summary>
+    [Parameter] public string Color { get; set; } = "var(--bf-node-selected)";
+
+    /// <summary>Render edge controls in addition to the four corner controls.</summary>
+    [Parameter] public bool ShowEdgeControls { get; set; } = true;
+
+    private bool IsVisible => Visible ?? NodeContext.Node.Selected;
+
+    private string HandleStyle => $"background:{Color};";
+    private string LineStyle => $"border-color:{Color};";
+
+    private IEnumerable<(ResizeDirection dir, string css)> _controls => ShowEdgeControls
+        ? _all
+        : _corners;
+
+    private static readonly (ResizeDirection, string)[] _corners =
+    [
+        (ResizeDirection.TopLeft, "top-left"),
+        (ResizeDirection.TopRight, "top-right"),
+        (ResizeDirection.BottomLeft, "bottom-left"),
+        (ResizeDirection.BottomRight, "bottom-right"),
+    ];
+
+    private static readonly (ResizeDirection, string)[] _all =
+    [
+        (ResizeDirection.TopLeft, "top-left"),
+        (ResizeDirection.TopRight, "top-right"),
+        (ResizeDirection.BottomLeft, "bottom-left"),
+        (ResizeDirection.BottomRight, "bottom-right"),
+        (ResizeDirection.Top, "top"),
+        (ResizeDirection.Right, "right"),
+        (ResizeDirection.Bottom, "bottom"),
+        (ResizeDirection.Left, "left"),
+    ];
+
+    private void OnDown(PointerEventArgs e, ResizeDirection dir)
+    {
+        if (e.Button != 0) return;
+        Flow.StartResize(NodeContext.Node.Id, dir, e.ClientX, e.ClientY, MinWidth, MinHeight, KeepAspectRatio);
+    }
+}

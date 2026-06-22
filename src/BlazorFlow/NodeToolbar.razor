@@ -1,0 +1,55 @@
+@namespace BlazorFlow
+
+@if (IsVisible)
+{
+    <div class="blazorflow__node-toolbar @Class"
+         style="@PositionStyle @Style"
+         @onpointerdown:stopPropagation="true">
+        @ChildContent
+    </div>
+}
+
+@code {
+    [CascadingParameter] private FlowNodeContext NodeContext { get; set; } = default!;
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    /// <summary>Show the toolbar. When null, it appears only while the node is selected.</summary>
+    [Parameter] public bool? Visible { get; set; }
+
+    /// <summary>Side of the node to anchor to: Top (default), Bottom, Left or Right.</summary>
+    [Parameter] public Position Position { get; set; } = Position.Top;
+
+    /// <summary>Gap between the node and the toolbar in screen pixels.</summary>
+    [Parameter] public double Offset { get; set; } = 8;
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool IsVisible => Visible ?? NodeContext.Node.Selected;
+
+    // Counter-scale by 1/zoom so the toolbar keeps a constant on-screen size.
+    private double Scale => 1.0 / Flow.Viewport.Zoom;
+
+    private string PositionStyle
+    {
+        get
+        {
+            var s = Inv(Scale);
+            var off = Inv(Offset);
+            return Position switch
+            {
+                Position.Bottom =>
+                    $"position:absolute;left:50%;top:100%;transform-origin:center top;transform:translate(-50%,{off}px) scale({s});",
+                Position.Left =>
+                    $"position:absolute;top:50%;left:0;transform-origin:right center;transform:translate(calc(-100% - {off}px),-50%) scale({s});",
+                Position.Right =>
+                    $"position:absolute;top:50%;left:100%;transform-origin:left center;transform:translate({off}px,-50%) scale({s});",
+                _ => // Top
+                    $"position:absolute;left:50%;top:0;transform-origin:center bottom;transform:translate(-50%,calc(-100% - {off}px)) scale({s});",
+            };
+        }
+    }
+
+    private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+}

@@ -1,0 +1,72 @@
+@namespace BlazorFlow
+
+<div class="blazorflow__handle blazorflow__handle-@PositionClass @TypeClass @StateClass @Class"
+     data-id="@NodeId"
+     data-handle-id="@(Id ?? string.Empty)"
+     data-handle-type="@TypeClass"
+     data-handle-pos="@PositionClass"
+     style="@Style"
+     @onpointerdown="OnPointerDown"
+     @onpointerdown:stopPropagation="true"
+     @onpointerup="OnPointerUp"
+     @onpointerup:stopPropagation="true"
+     @onpointerenter="OnPointerEnter"
+     @onpointerleave="OnPointerLeave">
+</div>
+
+@code {
+    [CascadingParameter] private FlowNodeContext NodeContext { get; set; } = default!;
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    /// <summary>Whether this handle is a connection source or target.</summary>
+    [Parameter] public HandleType Type { get; set; } = HandleType.Source;
+
+    /// <summary>Which side of the node the handle is anchored to.</summary>
+    [Parameter] public Position Position { get; set; } = Position.Bottom;
+
+    /// <summary>Optional handle id, required when a node has multiple handles of the same type.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>When false the handle cannot start or accept connections.</summary>
+    [Parameter] public bool IsConnectable { get; set; } = true;
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string NodeId => NodeContext.Node.Id;
+    private string PositionClass => Position.ToString().ToLowerInvariant();
+    private string TypeClass => Type.ToString().ToLowerInvariant();
+
+    private string StateClass
+    {
+        get
+        {
+            if (!Flow.IsConnecting) return string.Empty;
+            return Flow.IsValidConnectionTarget(NodeId, Id, Type)
+                ? "blazorflow__handle-valid"
+                : "blazorflow__handle-connectingfrom";
+        }
+    }
+
+    private void OnPointerDown(PointerEventArgs e)
+    {
+        if (!IsConnectable || e.Button != 0) return;
+        Flow.StartConnection(NodeId, Id, Type, Position);
+    }
+
+    private void OnPointerUp(PointerEventArgs e)
+    {
+        if (!IsConnectable) return;
+        Flow.CompleteConnection(NodeId, Id, Type);
+    }
+
+    private void OnPointerEnter(PointerEventArgs e)
+    {
+        if (Flow.IsConnecting) Flow.SetConnectionHover(NodeId, Id, Type, true);
+    }
+
+    private void OnPointerLeave(PointerEventArgs e)
+    {
+        if (Flow.IsConnecting) Flow.SetConnectionHover(NodeId, Id, Type, false);
+    }
+}

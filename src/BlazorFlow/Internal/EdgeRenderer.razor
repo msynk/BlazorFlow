@@ -1,0 +1,41 @@
+@namespace BlazorFlow.Internal
+
+<g class="blazorflow__edge @(Edge.Selected ? "selected" : null) @(Edge.Animated ? "animated" : null) @Edge.Class"
+   data-id="@Edge.Id"
+   @onpointerdown="OnPointerDown"
+   @onpointerdown:stopPropagation="true">
+
+    @* Invisible wide path to make the edge easy to click. *@
+    <path class="blazorflow__edge-interaction" d="@Geometry.Path" fill="none" stroke="transparent" stroke-width="14" />
+
+    <path class="blazorflow__edge-path"
+          d="@Geometry.Path"
+          fill="none"
+          stroke="@(Edge.Stroke ?? "var(--bf-edge-stroke)")"
+          stroke-width="@Inv(Edge.StrokeWidth)"
+          marker-end="@(Edge.MarkerEnd ? $"url(#{MarkerId})" : null)" />
+
+    @if (!string.IsNullOrEmpty(Edge.Label))
+    {
+        <g transform="@LabelTransform">
+            <rect class="blazorflow__edge-label-bg" x="@Inv(-LabelHalfW)" y="-10" width="@Inv(LabelHalfW * 2)" height="20" rx="3" />
+            <text class="blazorflow__edge-label" x="0" y="0" dominant-baseline="central" text-anchor="middle">@Edge.Label</text>
+        </g>
+    }
+</g>
+
+@code {
+    [Parameter, EditorRequired] public Edge Edge { get; set; } = default!;
+    [Parameter, EditorRequired] public PathResult Geometry { get; set; }
+    [Parameter] public string MarkerId { get; set; } = "bf-arrow";
+    [Parameter] public EventCallback<PointerEventArgs> OnSelect { get; set; }
+
+    private double LabelHalfW => Math.Max(12, (Edge.Label?.Length ?? 0) * 4.0 + 6);
+
+    private string LabelTransform => string.Create(CultureInfo.InvariantCulture,
+        $"translate({Geometry.LabelX},{Geometry.LabelY})");
+
+    private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+
+    private Task OnPointerDown(PointerEventArgs e) => OnSelect.InvokeAsync(e);
+}

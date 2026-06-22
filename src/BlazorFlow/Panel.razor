@@ -1,0 +1,15 @@
+@namespace BlazorFlow
+
+<div class="blazorflow__panel blazorflow__panel-@PositionClass @Class" style="@Style">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>Anchor position, e.g. "top-left", "top-right", "bottom-left", "bottom-right", "top-center".</summary>
+    [Parameter] public string Position { get; set; } = "top-left";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string PositionClass => Position.Replace(' ', '-').ToLowerInvariant();
+}

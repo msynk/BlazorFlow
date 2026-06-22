@@ -1,0 +1,205 @@
+:root {
+    --bf-bg: #f7f8fa;
+    --bf-surface: #ffffff;
+    --bf-border: #e3e6ea;
+    --bf-text: #1f2430;
+    --bf-muted: #6b7280;
+    --bf-primary: #6366f1;
+    --bf-primary-hover: #4f46e5;
+    --bf-primary-contrast: #ffffff;
+    --bf-radius: 10px;
+    --bf-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--bf-text);
+    background: var(--bf-bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+}
+
+h1:focus {
+    outline: none;
+}
+
+a {
+    color: var(--bf-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 0.78em;
+    font-family: inherit;
+    color: var(--bf-text);
+    background: #f1f2f4;
+    border: 1px solid var(--bf-border);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+}
+
+code {
+    color: #c02d76;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.text-muted {
+    color: var(--bf-muted);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font: inherit;
+    font-weight: 500;
+    line-height: 1;
+    padding: 8px 14px;
+    border: 1px solid var(--bf-border);
+    border-radius: 8px;
+    background: var(--bf-surface);
+    color: var(--bf-text);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+}
+
+.btn:hover {
+    background: #f1f2f4;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    border-radius: 7px;
+}
+
+.btn-primary {
+    background: var(--bf-primary);
+    border-color: var(--bf-primary);
+    color: var(--bf-primary-contrast);
+}
+
+.btn-primary:hover {
+    background: var(--bf-primary-hover);
+    border-color: var(--bf-primary-hover);
+}
+
+/* Blazor framework UI */
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.blazor-error-boundary {
+    background: #b32121;
+    padding: 1rem;
+    color: white;
+    border-radius: var(--bf-radius);
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred.";
+    }
+
+.loading-progress {
+    position: absolute;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    inset: 20vh 0 auto 0;
+    margin: 0 auto 0 auto;
+}
+
+    .loading-progress circle {
+        fill: none;
+        stroke: #e0e0e0;
+        stroke-width: 0.6rem;
+        transform-origin: 50% 50%;
+        transform: rotate(-90deg);
+    }
+
+        .loading-progress circle:last-child {
+            stroke: var(--bf-primary);
+            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+            transition: stroke-dasharray 0.05s ease-in-out;
+        }
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: bold;
+    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+}
+
+    .loading-progress-text:after {
+        content: var(--blazor-load-percentage-text, "Loading");
+    }
+
+/* Demo page helpers */
+.demo-header {
+    margin-bottom: 1.1rem;
+}
+
+    .demo-header h3 {
+        margin: 0 0 0.4rem;
+        font-size: 1.4rem;
+    }
+
+    .demo-header p {
+        margin: 0;
+        max-width: 70ch;
+        line-height: 1.55;
+    }
+
+.demo-canvas {
+    height: calc(100vh - 230px);
+    min-height: 420px;
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius);
+    background: var(--bf-surface);
+    box-shadow: var(--bf-shadow);
+    overflow: hidden;
+}

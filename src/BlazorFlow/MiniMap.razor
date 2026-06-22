@@ -1,0 +1,89 @@
+@namespace BlazorFlow
+
+<svg class="blazorflow__minimap" width="@Width" height="@Height" viewBox="@ViewBox">
+    @foreach (var node in Flow.CurrentNodes)
+    {
+        if (node.Hidden) continue;
+        var r = node.GetRect();
+        <rect class="blazorflow__minimap-node @(node.Selected ? "selected" : null)"
+              x="@Inv(r.X)" y="@Inv(r.Y)"
+              width="@Inv(r.Width)" height="@Inv(r.Height)"
+              rx="2"
+              fill="@NodeColor" />
+    }
+    <path class="blazorflow__minimap-mask"
+          d="@MaskPath"
+          fill="@MaskColor"
+          fill-rule="evenodd" />
+</svg>
+
+@code {
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    [Parameter] public int Width { get; set; } = 200;
+    [Parameter] public int Height { get; set; } = 150;
+    [Parameter] public string NodeColor { get; set; } = "#e2e2e2";
+    [Parameter] public string MaskColor { get; set; } = "rgba(120,120,120,0.25)";
+
+    private Rect _bounds;
+
+    private string ViewBox => string.Create(CultureInfo.InvariantCulture,
+        $"{_bounds.X} {_bounds.Y} {_bounds.Width} {_bounds.Height}");
+
+    protected override void OnParametersSet() => _bounds = ComputeBounds();
+
+    private Rect ComputeBounds()
+    {
+        // Union of all node rects, padded; falls back to the visible viewport area.
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        bool any = false;
+        foreach (var n in Flow.CurrentNodes)
+        {
+            if (n.Hidden) continue;
+            any = true;
+            var r = n.GetRect();
+            minX = Math.Min(minX, r.X);
+            minY = Math.Min(minY, r.Y);
+            maxX = Math.Max(maxX, r.Right);
+            maxY = Math.Max(maxY, r.Bottom);
+        }
+
+        if (!any)
+            return new Rect(0, 0, Width, Height);
+
+        // Include the current viewport rectangle so the mask is always visible.
+        var vp = VisibleRect();
+        minX = Math.Min(minX, vp.X);
+        minY = Math.Min(minY, vp.Y);
+        maxX = Math.Max(maxX, vp.Right);
+        maxY = Math.Max(maxY, vp.Bottom);
+
+        var w = maxX - minX;
+        var h = maxY - minY;
+        var pad = Math.Max(w, h) * 0.1 + 10;
+        return new Rect(minX - pad, minY - pad, w + pad * 2, h + pad * 2);
+    }
+
+    private Rect VisibleRect()
+    {
+        var vp = Flow.Viewport;
+        var pane = Flow.PaneSize;
+        var topLeft = vp.ScreenToFlow(0, 0);
+        return new Rect(topLeft.X, topLeft.Y, pane.Width / vp.Zoom, pane.Height / vp.Zoom);
+    }
+
+    private string MaskPath
+    {
+        get
+        {
+            var b = _bounds;
+            var v = VisibleRect();
+            // Outer rect (clockwise) + inner viewport rect (counter-clockwise) => mask everything except viewport.
+            return string.Create(CultureInfo.InvariantCulture,
+                $"M{b.X},{b.Y}h{b.Width}v{b.Height}h{-b.Width}z " +
+                $"M{v.X},{v.Y}v{v.Height}h{v.Width}v{-v.Height}z");
+        }
+    }
+
+    private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+}

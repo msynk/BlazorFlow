@@ -1,0 +1,63 @@
+@namespace BlazorFlow
+
+<svg class="blazorflow__background" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;">
+    <defs>
+        <pattern id="@_patternId" x="@Inv(OffsetX)" y="@Inv(OffsetY)"
+                 width="@Inv(ScaledGap)" height="@Inv(ScaledGap)"
+                 patternUnits="userSpaceOnUse">
+            @switch (Variant)
+            {
+                case BackgroundVariant.Dots:
+                    <circle cx="@Inv(ScaledGap / 2)" cy="@Inv(ScaledGap / 2)" r="@Inv(Size * Zoom)" fill="@Color" />
+                    break;
+                case BackgroundVariant.Cross:
+                    <path d="@CrossPath" stroke="@Color" stroke-width="@Inv(LineWidth)" />
+                    break;
+                default: // Lines
+                    <path d="@LinePath" stroke="@Color" stroke-width="@Inv(LineWidth)" fill="none" />
+                    break;
+            }
+        </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#@_patternId)" />
+</svg>
+
+@code {
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    /// <summary>Pattern style: dots, lines or cross.</summary>
+    [Parameter] public BackgroundVariant Variant { get; set; } = BackgroundVariant.Dots;
+
+    /// <summary>Spacing between pattern repetitions in flow units.</summary>
+    [Parameter] public double Gap { get; set; } = 20;
+
+    /// <summary>Dot radius / cross arm length in flow units.</summary>
+    [Parameter] public double Size { get; set; } = 1;
+
+    /// <summary>Pattern color. Falls back to the theme default when null.</summary>
+    [Parameter] public string? Color { get; set; } = "#aaa";
+
+    private readonly string _patternId = $"bf-bg-{Guid.NewGuid():N}";
+
+    private double Zoom => Flow.Viewport.Zoom;
+    private double ScaledGap => Gap * Zoom;
+    private double OffsetX => Flow.Viewport.X % ScaledGap;
+    private double OffsetY => Flow.Viewport.Y % ScaledGap;
+    private double LineWidth => Math.Max(0.5, Size * Zoom);
+
+    private string LinePath => string.Create(CultureInfo.InvariantCulture,
+        $"M{ScaledGap} 0 V{ScaledGap} M0 {ScaledGap} H{ScaledGap}");
+
+    private string CrossPath
+    {
+        get
+        {
+            var c = ScaledGap / 2;
+            var a = Size * Zoom + 1;
+            return string.Create(CultureInfo.InvariantCulture,
+                $"M{c - a} {c} h{a * 2} M{c} {c - a} v{a * 2}");
+        }
+    }
+
+    private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+}

@@ -1,0 +1,55 @@
+@namespace BlazorFlow
+@implements BlazorFlow.Internal.IFlowContext
+@implements IAsyncDisposable
+
+<CascadingValue Value="(IFlowContext)this" IsFixed="false">
+    <div class="blazorflow @Class"
+         style="@Style"
+         tabindex="0"
+         @ref="_paneRef"
+         @onpointerdown="OnPanePointerDown"
+         @onpointermove="OnPanePointerMove"
+         @onpointerup="OnPanePointerUp"
+         @onpointerleave="OnPanePointerUp"
+         @onwheel="OnWheel"
+         @onwheel:preventDefault="true"
+         @onkeydown="OnKeyDown">
+
+        <div class="blazorflow__viewport" @ref="_viewportRef" style="transform:@_viewport.ToTransform();">
+
+            <svg class="blazorflow__edges" style="overflow:visible;">
+                <defs>
+                    <marker id="@_markerId" viewBox="0 0 12 12" refX="9" refY="6"
+                            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path d="M1,1 L9,6 L1,11" fill="none" stroke="var(--bf-edge-stroke)" stroke-width="1.5" />
+                    </marker>
+                </defs>
+
+                @foreach (var edge in VisibleEdges())
+                {
+                    <EdgeRenderer @key="edge.Id"
+                                  Edge="edge"
+                                  Geometry="GetEdgeGeometry(edge)"
+                                  MarkerId="@_markerId"
+                                  OnSelect="@(e => SelectEdge(edge, e))" />
+                }
+
+                @if (_connecting)
+                {
+                    <path class="blazorflow__connectionline" d="@ConnectionLinePath()"
+                          fill="none" stroke="var(--bf-connection-stroke)" stroke-width="1.5" />
+                }
+            </svg>
+
+            @foreach (var node in VisibleNodes())
+            {
+                <NodeRenderer @key="node.Id"
+                              Node="node"
+                              Template="NodeTemplate"
+                              OnDragStart="@(e => StartNodeDrag(node, e))" />
+            }
+        </div>
+
+        @ChildContent
+    </div>
+</CascadingValue>

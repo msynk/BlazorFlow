@@ -1,0 +1,44 @@
+@page "/edge-types"
+
+<PageTitle>BlazorFlow - Edge Types</PageTitle>
+
+<div class="demo-header">
+    <h3>Edge Types</h3>
+    <p class="text-muted">The four built-in edge path algorithms: bezier, straight, step and smoothstep.</p>
+</div>
+
+<div class="demo-canvas">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" DefaultEdgeType="EdgeType.SmoothStep">
+        <Background />
+        <Controls />
+        <MiniMap />
+    </FlowCanvas>
+</div>
+
+@code {
+    private List<Node> _nodes = new();
+    private List<Edge> _edges = new();
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "a1", Label = "A", Position = new(40, 40) },
+            new Node { Id = "a2", Label = "B", Position = new(320, 40) },
+            new Node { Id = "b1", Label = "C", Position = new(40, 160) },
+            new Node { Id = "b2", Label = "D", Position = new(320, 160) },
+            new Node { Id = "c1", Label = "E", Position = new(40, 280) },
+            new Node { Id = "c2", Label = "F", Position = new(320, 280) },
+            new Node { Id = "d1", Label = "G", Position = new(40, 400) },
+            new Node { Id = "d2", Label = "H", Position = new(320, 400) },
+        ];
+
+        _edges =
+        [
+            new Edge { Id = "e-bezier",     Source = "a1", Target = "a2", Type = EdgeType.Bezier,     Label = "bezier" },
+            new Edge { Id = "e-straight",   Source = "b1", Target = "b2", Type = EdgeType.Straight,   Label = "straight" },
+            new Edge { Id = "e-step",       Source = "c1", Target = "c2", Type = EdgeType.Step,       Label = "step" },
+            new Edge { Id = "e-smoothstep", Source = "d1", Target = "d2", Type = EdgeType.SmoothStep, Label = "smoothstep", Animated = true },
+        ];
+    }
+}
