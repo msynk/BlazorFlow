@@ -292,3 +292,55 @@
 .blazorflow__handle-connectingfrom {
     background: #ef4444;
 }
+
+/* Box selection rectangle (rendered in the viewport layer, flow units). */
+.blazorflow__selection {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: color-mix(in srgb, var(--bf-node-selected) 12%, transparent);
+    border: 1px solid var(--bf-node-selected);
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Edge reconnection anchors (shown on selected, reconnectable edges). */
+.blazorflow__edge-reconnect {
+    fill: #fff;
+    stroke: var(--bf-edge-selected);
+    stroke-width: 1.5;
+    cursor: crosshair;
+    pointer-events: all;
+}
+
+.blazorflow__edge-reconnect:hover {
+    fill: var(--bf-edge-selected);
+}
+
+/* Interactive minimap. */
+.blazorflow__minimap.pannable {
+    cursor: pointer;
+}
+
+/* Custom drag handle inside a node. */
+.blazorflow__drag-handle {
+    cursor: grab;
+}
+
+.blazorflow__drag-handle:active {
+    cursor: grabbing;
+}
+
+/* HTML edge label overlay (non-transformed, constant screen size). */
+.blazorflow__edge-labels {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.blazorflow__edge-label-html {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: all;
+}

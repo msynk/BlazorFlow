@@ -1,0 +1,86 @@
+@page "/labels-handles"
+
+<PageTitle>BlazorFlow - Labels &amp; Drag Handles</PageTitle>
+
+<div class="demo-header">
+    <h3>HTML Edge Labels &amp; Drag Handles</h3>
+    <p class="text-muted">
+        Edges use <strong>HTML labels</strong> (interactive buttons rendered in a non-transformed overlay,
+        so they stay a constant size). The purple nodes can only be dragged by their <strong>⠿ handle</strong>
+        — clicking the body just selects.
+    </p>
+</div>
+
+<div class="demo-canvas" style="height: calc(100vh - 240px);">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <NodeTemplate Context="node">
+            @if (node.Type == "panel")
+            {
+                <Handle Type="HandleType.Target" Position="Position.Top" />
+                <div class="panel-node">
+                    <DragHandle Class="panel-node__grip">⠿</DragHandle>
+                    <div class="panel-node__title">@node.Label</div>
+                </div>
+                <Handle Type="HandleType.Source" Position="Position.Bottom" />
+            }
+            else
+            {
+                <BlazorFlow.Internal.DefaultNode Node="node" />
+            }
+        </NodeTemplate>
+
+        <EdgeLabelTemplate Context="ctx">
+            <div class="edge-label">
+                <span>@(ctx.Edge.Label ?? ctx.Edge.Id)</span>
+                <button class="edge-label__btn" title="Delete edge" @onclick="() => RemoveEdge(ctx.Edge)">×</button>
+            </div>
+        </EdgeLabelTemplate>
+
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="20" />
+            <Controls />
+            <MiniMap />
+        </ChildContent>
+    </FlowCanvas>
+</div>
+
+<style>
+    .panel-node { display:flex; align-items:center; gap:8px; padding:2px 4px; }
+    .panel-node__grip { font-size:16px; color:#7c3aed; user-select:none; }
+    .panel-node__title { font-weight:600; }
+    .blazorflow__node-panel { background:#f5f3ff; border-color:#7c3aed; }
+
+    .edge-label {
+        display:flex; align-items:center; gap:6px;
+        background:#fff; border:1px solid #ddd; border-radius:6px;
+        padding:2px 6px; font-size:12px; box-shadow:0 1px 3px rgba(0,0,0,0.12);
+    }
+    .edge-label__btn {
+        border:none; background:#fee2e2; color:#b91c1c; border-radius:4px;
+        width:18px; height:18px; line-height:1; cursor:pointer; padding:0;
+    }
+    .edge-label__btn:hover { background:#fecaca; }
+</style>
+
+@code {
+    private List<Node> _nodes = new();
+    private List<Edge> _edges = new();
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "panel", Label = "Source",  Position = new(120, 40),  UseCustomDragHandle = true, Width = 160 },
+            new Node { Id = "2", Type = "panel", Label = "Process", Position = new(120, 200), UseCustomDragHandle = true, Width = 160 },
+            new Node { Id = "3",                 Label = "Plain (drag anywhere)", Position = new(380, 120), Width = 180 },
+        ];
+
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Label = "validate", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e2-3", Source = "2", Target = "3", Label = "emit",     MarkerType = MarkerType.ArrowClosed },
+        ];
+    }
+
+    private void RemoveEdge(Edge edge) => _edges.RemoveAll(e => e.Id == edge.Id);
+}

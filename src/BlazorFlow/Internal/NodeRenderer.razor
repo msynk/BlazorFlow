@@ -4,8 +4,19 @@
 <div class="blazorflow__node blazorflow__node-@Node.Type @(Node.Selected ? "selected" : null) @Node.Class"
      data-id="@Node.Id"
      style="@StyleString"
+     tabindex="@TabIndex"
+     role="button"
+     aria-label="@AriaLabel"
      @onpointerdown="OnPointerDown"
-     @onpointerdown:stopPropagation="true">
+     @onpointerdown:stopPropagation="true"
+     @onclick:stopPropagation="true"
+     @ondblclick="OnDoubleClick"
+     @ondblclick:stopPropagation="true"
+     @oncontextmenu="OnContextMenu"
+     @oncontextmenu:stopPropagation="true"
+     @oncontextmenu:preventDefault="true"
+     @onmouseenter="OnMouseEnter"
+     @onmouseleave="OnMouseLeave">
     <CascadingValue Value="_nodeContext" IsFixed="true">
         @if (Template is not null)
         {
@@ -22,6 +33,16 @@
     [Parameter, EditorRequired] public Node Node { get; set; } = default!;
     [Parameter] public RenderFragment<Node>? Template { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnDragStart { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnDoubleClick { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnContextMenu { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnMouseEnter { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnMouseLeave { get; set; }
+
+    /// <summary>When false, suppresses the node's tab order (set by the canvas a11y flag).</summary>
+    [Parameter] public bool Focusable { get; set; } = true;
+
+    private string? TabIndex => (Focusable && Node.Focusable) ? "0" : null;
+    private string AriaLabel => Node.AriaLabel ?? Node.Label ?? $"Node {Node.Id}";
 
     private FlowNodeContext _nodeContext = default!;
 

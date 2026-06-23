@@ -51,12 +51,18 @@
     private void OnPointerDown(PointerEventArgs e)
     {
         if (!IsConnectable || e.Button != 0) return;
-        Flow.StartConnection(NodeId, Id, Type, Position);
+        // In click-to-connect mode, a second handle click completes the pending connection.
+        if (Flow.ConnectOnClick && Flow.IsConnecting)
+            Flow.CompleteConnection(NodeId, Id, Type);
+        else
+            Flow.StartConnection(NodeId, Id, Type, Position);
     }
 
     private void OnPointerUp(PointerEventArgs e)
     {
         if (!IsConnectable) return;
+        // In click-to-connect mode, completion happens on the next handle's pointer-down.
+        if (Flow.ConnectOnClick) return;
         Flow.CompleteConnection(NodeId, Id, Type);
     }
 

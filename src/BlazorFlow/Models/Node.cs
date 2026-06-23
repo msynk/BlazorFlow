@@ -37,10 +37,28 @@ public class Node
     public bool Hidden { get; set; }
 
     /// <summary>
+    /// When true, the node body no longer initiates dragging; only a nested
+    /// <c>&lt;DragHandle&gt;</c> element can start a drag (React Flow's <c>dragHandle</c>).
+    /// </summary>
+    public bool UseCustomDragHandle { get; set; }
+
+    /// <summary>When true the node is keyboard-focusable (tab order). Defaults to true.</summary>
+    public bool Focusable { get; set; } = true;
+
+    /// <summary>Accessible label announced by screen readers. Falls back to <see cref="Label"/>.</summary>
+    public string? AriaLabel { get; set; }
+
+    /// <summary>
     /// Optional id of a parent node. When set, <see cref="Position"/> is interpreted
     /// relative to the parent's top-left, enabling sub-flows / grouping.
     /// </summary>
     public string? ParentId { get; set; }
+
+    /// <summary>
+    /// When true and <see cref="ParentId"/> is set, the node is constrained so it cannot
+    /// be dragged outside its parent's bounds (React Flow's <c>extent: 'parent'</c>).
+    /// </summary>
+    public bool ExtentParent { get; set; }
 
     /// <summary>Additional CSS class(es) applied to the node element.</summary>
     public string? Class { get; set; }

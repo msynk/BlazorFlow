@@ -1,0 +1,25 @@
+@namespace BlazorFlow
+
+@* Place inside a custom node to designate the area that initiates dragging. *@
+@* Set the node's UseCustomDragHandle = true so the node body no longer drags. *@
+
+<div class="blazorflow__drag-handle @Class" style="@Style"
+     @onpointerdown="OnPointerDown"
+     @onpointerdown:stopPropagation="true">
+    @ChildContent
+</div>
+
+@code {
+    [CascadingParameter] private FlowNodeContext NodeContext { get; set; } = default!;
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private void OnPointerDown(PointerEventArgs e)
+    {
+        if (e.Button == 0)
+            Flow.BeginNodeDrag(NodeContext.Node, e);
+    }
+}

@@ -14,6 +14,9 @@ public interface IFlowContext
     /// <summary>True while the user is dragging a new connection from a handle.</summary>
     bool IsConnecting { get; }
 
+    /// <summary>When true, connections are made by clicking handles rather than dragging.</summary>
+    bool ConnectOnClick { get; }
+
     /// <summary>Begins a connection drag originating from the given handle.</summary>
     void StartConnection(string nodeId, string? handleId, HandleType handleType, Position position);
 
@@ -49,6 +52,9 @@ public interface IFlowContext
     /// <summary>Begins a node resize gesture (called by <c>NodeResizer</c>).</summary>
     void StartResize(string nodeId, ResizeDirection direction,
         double clientX, double clientY, double minWidth, double minHeight, bool keepAspectRatio);
+
+    /// <summary>Begins dragging a node from a custom <c>DragHandle</c> element.</summary>
+    void BeginNodeDrag(Node node, Microsoft.AspNetCore.Components.Web.PointerEventArgs e);
 }
 
 /// <summary>

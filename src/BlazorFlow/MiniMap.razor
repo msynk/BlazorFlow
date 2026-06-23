@@ -1,6 +1,11 @@
 @namespace BlazorFlow
 
-<svg class="blazorflow__minimap" width="@Width" height="@Height" viewBox="@ViewBox">
+<svg class="blazorflow__minimap @(Pannable ? "pannable" : null)"
+     width="@Width" height="@Height" viewBox="@ViewBox"
+     @onpointerdown="OnPointerDown"
+     @onpointermove="OnPointerMove"
+     @onpointerup="OnPointerUp"
+     @onpointerleave="OnPointerUp">
     @foreach (var node in Flow.CurrentNodes)
     {
         if (node.Hidden) continue;
@@ -25,7 +30,11 @@
     [Parameter] public string NodeColor { get; set; } = "#e2e2e2";
     [Parameter] public string MaskColor { get; set; } = "rgba(120,120,120,0.25)";
 
+    /// <summary>When true, clicking or dragging on the minimap pans the main viewport.</summary>
+    [Parameter] public bool Pannable { get; set; } = true;
+
     private Rect _bounds;
+    private bool _panning;
 
     private string ViewBox => string.Create(CultureInfo.InvariantCulture,
         $"{_bounds.X} {_bounds.Y} {_bounds.Width} {_bounds.Height}");
@@ -86,4 +95,32 @@
     }
 
     private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+
+    private void OnPointerDown(PointerEventArgs e)
+    {
+        if (!Pannable || e.Button != 0) return;
+        _panning = true;
+        PanTo(e.OffsetX, e.OffsetY);
+    }
+
+    private void OnPointerMove(PointerEventArgs e)
+    {
+        if (_panning) PanTo(e.OffsetX, e.OffsetY);
+    }
+
+    private void OnPointerUp(PointerEventArgs e) => _panning = false;
+
+    /// <summary>Centers the main viewport on the flow point under the given minimap-local pixel.</summary>
+    private void PanTo(double offsetX, double offsetY)
+    {
+        if (Width <= 0 || Height <= 0) return;
+        var fx = _bounds.X + offsetX * (_bounds.Width / Width);
+        var fy = _bounds.Y + offsetY * (_bounds.Height / Height);
+
+        var vp = Flow.Viewport;
+        var pane = Flow.PaneSize;
+        var x = pane.Width / 2 - fx * vp.Zoom;
+        var y = pane.Height / 2 - fy * vp.Zoom;
+        Flow.SetViewport(new Viewport(x, y, vp.Zoom));
+    }
 }

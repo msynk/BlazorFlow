@@ -3,32 +3,56 @@
 <g class="blazorflow__edge @(Edge.Selected ? "selected" : null) @(Edge.Animated ? "animated" : null) @Edge.Class"
    data-id="@Edge.Id"
    @onpointerdown="OnPointerDown"
-   @onpointerdown:stopPropagation="true">
+   @onpointerdown:stopPropagation="true"
+   @onclick:stopPropagation="true"
+   @ondblclick="OnDoubleClick"
+   @ondblclick:stopPropagation="true"
+   @oncontextmenu="OnContextMenu"
+   @oncontextmenu:stopPropagation="true"
+   @oncontextmenu:preventDefault="true"
+   @onmouseenter="OnMouseEnter"
+   @onmouseleave="OnMouseLeave">
 
     @* Invisible wide path to make the edge easy to click. *@
     <path class="blazorflow__edge-interaction" d="@Geometry.Path" fill="none" stroke="transparent" stroke-width="14" />
 
-    <path class="blazorflow__edge-path"
-          d="@Geometry.Path"
-          fill="none"
-          stroke="@(Edge.Stroke ?? "var(--bf-edge-stroke)")"
-          stroke-width="@Inv(Edge.StrokeWidth)"
-          marker-end="@(Edge.MarkerEnd ? $"url(#{MarkerId})" : null)" />
-
-    @if (!string.IsNullOrEmpty(Edge.Label))
+    @if (Template is not null)
     {
-        <g transform="@LabelTransform">
-            <rect class="blazorflow__edge-label-bg" x="@Inv(-LabelHalfW)" y="-10" width="@Inv(LabelHalfW * 2)" height="20" rx="3" />
-            <text class="blazorflow__edge-label" x="0" y="0" dominant-baseline="central" text-anchor="middle">@Edge.Label</text>
-        </g>
+        @Template(Context)
+    }
+    else
+    {
+        <path class="blazorflow__edge-path"
+              d="@Geometry.Path"
+              fill="none"
+              stroke="@(Edge.Stroke ?? "var(--bf-edge-stroke)")"
+              stroke-width="@Inv(Edge.StrokeWidth)"
+              marker-start="@MarkerUrl(Edge.MarkerStart)"
+              marker-end="@MarkerUrl(Edge.MarkerEnd)" />
+
+        @if (!SuppressLabel && !string.IsNullOrEmpty(Edge.Label))
+        {
+            <g transform="@LabelTransform">
+                <rect class="blazorflow__edge-label-bg" x="@Inv(-LabelHalfW)" y="-10" width="@Inv(LabelHalfW * 2)" height="20" rx="3" />
+                <text class="blazorflow__edge-label" x="0" y="0" dominant-baseline="central" text-anchor="middle">@Edge.Label</text>
+            </g>
+        }
     }
 </g>
 
 @code {
     [Parameter, EditorRequired] public Edge Edge { get; set; } = default!;
-    [Parameter, EditorRequired] public PathResult Geometry { get; set; }
-    [Parameter] public string MarkerId { get; set; } = "bf-arrow";
+    [Parameter, EditorRequired] public EdgeContext Context { get; set; } = default!;
+    [Parameter] public RenderFragment<EdgeContext>? Template { get; set; }
+    [Parameter] public string MarkerPrefix { get; set; } = "bf-arrow";
+    [Parameter] public bool SuppressLabel { get; set; }
     [Parameter] public EventCallback<PointerEventArgs> OnSelect { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnDoubleClick { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnContextMenu { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnMouseEnter { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnMouseLeave { get; set; }
+
+    private PathResult Geometry => Context.Geometry;
 
     private double LabelHalfW => Math.Max(12, (Edge.Label?.Length ?? 0) * 4.0 + 6);
 
@@ -36,6 +60,13 @@
         $"translate({Geometry.LabelX},{Geometry.LabelY})");
 
     private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+
+    private string? MarkerUrl(bool show)
+    {
+        if (!show) return null;
+        var suffix = Edge.MarkerType == MarkerType.ArrowClosed ? "arrowclosed" : "arrow";
+        return $"url(#{MarkerPrefix}-{suffix})";
+    }
 
     private Task OnPointerDown(PointerEventArgs e) => OnSelect.InvokeAsync(e);
 }

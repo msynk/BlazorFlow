@@ -13,15 +13,22 @@
          @onpointerleave="OnPanePointerUp"
          @onwheel="OnWheel"
          @onwheel:preventDefault="true"
+         @onclick="OnPaneClickHandler"
+         @ondblclick="OnPaneDoubleClick"
+         @oncontextmenu="OnPaneContextMenuHandler"
          @onkeydown="OnKeyDown">
 
         <div class="blazorflow__viewport" @ref="_viewportRef" style="transform:@_viewport.ToTransform();">
 
             <svg class="blazorflow__edges" style="overflow:visible;">
                 <defs>
-                    <marker id="@_markerId" viewBox="0 0 12 12" refX="9" refY="6"
+                    <marker id="@($"{_markerPrefix}-arrow")" viewBox="0 0 12 12" refX="9" refY="6"
                             markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                        <path d="M1,1 L9,6 L1,11" fill="none" stroke="var(--bf-edge-stroke)" stroke-width="1.5" />
+                        <path d="M1,1 L9,6 L1,11" fill="none" stroke="context-stroke" stroke-width="1.5" />
+                    </marker>
+                    <marker id="@($"{_markerPrefix}-arrowclosed")" viewBox="0 0 12 12" refX="9" refY="6"
+                            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                        <path d="M1,1 L9,6 L1,11 z" fill="context-stroke" stroke="context-stroke" stroke-width="1" />
                     </marker>
                 </defs>
 
@@ -29,15 +36,38 @@
                 {
                     <EdgeRenderer @key="edge.Id"
                                   Edge="edge"
-                                  Geometry="GetEdgeGeometry(edge)"
-                                  MarkerId="@_markerId"
-                                  OnSelect="@(e => SelectEdge(edge, e))" />
+                                  Context="GetEdgeContext(edge)"
+                                  Template="EdgeTemplate"
+                                  SuppressLabel="@(EdgeLabelTemplate is not null)"
+                                  MarkerPrefix="@_markerPrefix"
+                                  OnSelect="@(e => SelectEdge(edge, e))"
+                                  OnDoubleClick="@(e => OnEdgeDoubleClick.InvokeAsync(new EdgeMouseEvent(edge, e)))"
+                                  OnContextMenu="@(e => OnEdgeContextMenu.InvokeAsync(new EdgeMouseEvent(edge, e)))"
+                                  OnMouseEnter="@(e => OnEdgeMouseEnter.InvokeAsync(new EdgeMouseEvent(edge, e)))"
+                                  OnMouseLeave="@(e => OnEdgeMouseLeave.InvokeAsync(new EdgeMouseEvent(edge, e)))" />
                 }
 
                 @if (_connecting)
                 {
                     <path class="blazorflow__connectionline" d="@ConnectionLinePath()"
                           fill="none" stroke="var(--bf-connection-stroke)" stroke-width="1.5" />
+                }
+
+                @if (ElementsSelectable && EdgesReconnectable)
+                {
+                    @foreach (var edge in VisibleEdges())
+                    {
+                        if (!edge.Selected || !edge.Reconnectable) continue;
+                        var ep = GetEdgeEndpoints(edge);
+                        <circle class="blazorflow__edge-reconnect"
+                                cx="@Inv(ep.Source.X)" cy="@Inv(ep.Source.Y)" r="4"
+                                @onpointerdown="@(e => StartReconnect(edge, HandleType.Source, e))"
+                                @onpointerdown:stopPropagation="true" />
+                        <circle class="blazorflow__edge-reconnect"
+                                cx="@Inv(ep.Target.X)" cy="@Inv(ep.Target.Y)" r="4"
+                                @onpointerdown="@(e => StartReconnect(edge, HandleType.Target, e))"
+                                @onpointerdown:stopPropagation="true" />
+                    }
                 }
             </svg>
 
@@ -46,9 +76,33 @@
                 <NodeRenderer @key="node.Id"
                               Node="node"
                               Template="NodeTemplate"
-                              OnDragStart="@(e => StartNodeDrag(node, e))" />
+                              Focusable="@(!DisableKeyboardA11y)"
+                              OnDragStart="@(e => StartNodeDrag(node, e))"
+                              OnDoubleClick="@(e => OnNodeDoubleClick.InvokeAsync(new NodeMouseEvent(node, e)))"
+                              OnContextMenu="@(e => OnNodeContextMenu.InvokeAsync(new NodeMouseEvent(node, e)))"
+                              OnMouseEnter="@(e => OnNodeMouseEnter.InvokeAsync(new NodeMouseEvent(node, e)))"
+                              OnMouseLeave="@(e => OnNodeMouseLeave.InvokeAsync(new NodeMouseEvent(node, e)))" />
+            }
+
+            @if (_selecting)
+            {
+                <div class="blazorflow__selection" style="@SelectionStyle()"></div>
             }
         </div>
+
+        @if (EdgeLabelTemplate is not null)
+        {
+            <div class="blazorflow__edge-labels">
+                @foreach (var edge in VisibleEdges())
+                {
+                    var ctx = GetEdgeContext(edge);
+                    var p = _viewport.FlowToScreen(new XYPosition(ctx.Geometry.LabelX, ctx.Geometry.LabelY));
+                    <div class="blazorflow__edge-label-html" style="left:@Inv(p.X)px;top:@Inv(p.Y)px;">
+                        @EdgeLabelTemplate(ctx)
+                    </div>
+                }
+            </div>
+        }
 
         @ChildContent
     </div>

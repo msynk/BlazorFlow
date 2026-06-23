@@ -31,6 +31,9 @@ public class Edge
     public bool Selected { get; set; }
     public bool Hidden { get; set; }
 
+    /// <summary>When true (and the canvas allows it), the edge's endpoints can be dragged to new handles.</summary>
+    public bool Reconnectable { get; set; } = true;
+
     /// <summary>Stroke width in pixels.</summary>
     public double StrokeWidth { get; set; } = 1.5;
 
@@ -39,6 +42,12 @@ public class Edge
 
     /// <summary>Whether to draw an arrowhead marker at the target end.</summary>
     public bool MarkerEnd { get; set; } = true;
+
+    /// <summary>Whether to draw an arrowhead marker at the source end.</summary>
+    public bool MarkerStart { get; set; }
+
+    /// <summary>Arrowhead style used for <see cref="MarkerEnd"/>/<see cref="MarkerStart"/>.</summary>
+    public MarkerType MarkerType { get; set; } = MarkerType.Arrow;
 
     /// <summary>Additional CSS class(es) applied to the edge group.</summary>
     public string? Class { get; set; }
