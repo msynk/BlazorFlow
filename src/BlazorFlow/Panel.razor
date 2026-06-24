@@ -1,6 +1,11 @@
 @namespace BlazorFlow
 
-<div class="blazorflow__panel blazorflow__panel-@PositionClass @Class" style="@Style">
+<div class="blazorflow__panel blazorflow__panel-@PositionClass @Class" style="@Style"
+     @onpointerdown:stopPropagation="true"
+     @onclick:stopPropagation="true"
+     @ondblclick:stopPropagation="true"
+     @onwheel:stopPropagation="true"
+     @oncontextmenu:stopPropagation="true">
     @ChildContent
 </div>
 
