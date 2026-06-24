@@ -1,0 +1,52 @@
+@page "/examples/use-key-press"
+
+<PageTitle>BlazorFlow - Use Key Press</PageTitle>
+
+<ExampleScaffold Title="Use Key Press"
+                 Summary="Click the canvas area to focus it, then use keyboard shortcuts: 'a' adds a node, Delete removes the selection. The last key pressed is shown.">
+    <Toolbar>
+        <span class="text-muted">last key: <strong>@_lastKey</strong></span>
+    </Toolbar>
+    <ChildContent>
+        <div class="keypress" tabindex="0" @onkeydown="OnKeyDown">
+            <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+                <Background Variant="BackgroundVariant.Dots" Gap="16" />
+                <Controls />
+            </FlowCanvas>
+        </div>
+    </ChildContent>
+</ExampleScaffold>
+
+<style>
+    .keypress { height:100%; outline:none; }
+</style>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private string _lastKey = "—";
+    private int _id = 1;
+
+    protected override void OnInitialized()
+    {
+        _nodes = [ new Node { Id = "1", Label = "Press 'a' to add a node", Position = new(160, 120), Width = 200 } ];
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        _lastKey = e.Key;
+        if (e.Key is "a" or "A")
+        {
+            _id++;
+            _nodes.Add(new Node { Id = _id.ToString(), Label = $"Node {_id}", Position = new(Random.Shared.Next(40, 420), Random.Shared.Next(40, 280)) });
+            _flow?.Refresh(remeasure: true);
+        }
+        else if (e.Key is "Delete" or "Backspace")
+        {
+            var selected = _nodes.Where(n => n.Selected).ToList();
+            if (_flow is not null && selected.Count > 0)
+                await _flow.DeleteElementsAsync(selected);
+        }
+    }
+}

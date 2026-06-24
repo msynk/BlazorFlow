@@ -1,0 +1,41 @@
+@page "/examples/custom-connection-line"
+
+<PageTitle>BlazorFlow - Custom Connection Line</PageTitle>
+
+<ExampleScaffold Title="Custom Connection Line"
+                 Summary="Customize the line drawn while creating a connection. Drag from a handle: the line is a dashed gradient stroke with a moving end dot that turns green over a valid target.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <ConnectionLineTemplate Context="c">
+            <g>
+                <path d="@LinePath(c)" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6 4" />
+                <circle cx="@Inv(c.To.X)" cy="@Inv(c.To.Y)" r="5"
+                        fill="@(c.IsValid ? "#16a34a" : "#6366f1")" stroke="#fff" stroke-width="1.5" />
+            </g>
+        </ConnectionLineTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Drag from here", Position = new(120, 40), Width = 160 },
+            new Node { Id = "2", Label = "Node B", Position = new(80, 220) },
+            new Node { Id = "3", Label = "Node C", Position = new(320, 220) },
+        ];
+        _edges = [];
+    }
+
+    private string LinePath(ConnectionLineContext c) =>
+        EdgePath.Compute(EdgeType.Bezier, c.From.X, c.From.Y, c.FromPosition, c.To.X, c.To.Y, c.ToPosition).Path;
+
+    private static string Inv(double v) => v.ToString(System.Globalization.CultureInfo.InvariantCulture);
+}

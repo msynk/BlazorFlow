@@ -1,0 +1,46 @@
+@page "/examples/node-type-change"
+
+<PageTitle>BlazorFlow - Node Type Change</PageTitle>
+
+<ExampleScaffold Title="Node Type Change"
+                 Summary="Change a node's type at runtime. The renderer and handle layout update immediately when the type cycles between input, default and output.">
+    <Toolbar>
+        <button class="btn btn-sm btn-primary" @onclick="CycleType">Cycle node 2 type</button>
+        <span class="text-muted">node 2 is currently: <strong>@_node2.Type</strong></span>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private Node _node2 = default!;
+    private static readonly string[] Types = ["default", "input", "output"];
+
+    protected override void OnInitialized()
+    {
+        _node2 = new Node { Id = "2", Type = "default", Label = "I can change", Position = new(250, 150) };
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Input", Position = new(250, 20) },
+            _node2,
+            new Node { Id = "3", Type = "output", Label = "Output", Position = new(250, 300) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2" },
+            new Edge { Id = "e2-3", Source = "2", Target = "3" },
+        ];
+    }
+
+    private void CycleType()
+    {
+        var idx = Array.IndexOf(Types, _node2.Type);
+        _node2.Type = Types[(idx + 1) % Types.Length];
+    }
+}

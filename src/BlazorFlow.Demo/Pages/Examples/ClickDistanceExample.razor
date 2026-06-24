@@ -1,0 +1,36 @@
+@page "/examples/click-distance"
+
+<PageTitle>BlazorFlow - Click Distance</PageTitle>
+
+<ExampleScaffold Title="Click Distance"
+                 Summary="NodeDragThreshold sets how far the pointer must travel before a node starts moving. With a large threshold, small accidental movements are treated as clicks (the node selects but stays put).">
+    <Toolbar>
+        <label>drag threshold:
+            <input type="range" min="0" max="60" step="1" value="@_threshold"
+                   @oninput="e => _threshold = double.Parse(e.Value!.ToString()!)" />
+            @_threshold px
+        </label>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" NodeDragThreshold="_threshold">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private double _threshold = 30;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Label = "Try a small drag vs a big drag", Position = new(120, 60), Width = 240 },
+            new Node { Id = "2", Label = "Node 2", Position = new(200, 200) },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2" } ];
+    }
+}

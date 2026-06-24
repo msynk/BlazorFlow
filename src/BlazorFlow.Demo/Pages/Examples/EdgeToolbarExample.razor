@@ -1,0 +1,68 @@
+@page "/examples/edge-toolbar"
+
+<PageTitle>BlazorFlow - Edge Toolbar</PageTitle>
+
+<ExampleScaffold Title="Edge Toolbar"
+                 Summary="Selecting an edge reveals an EdgeToolbar anchored at its midpoint (constant screen size). Use it to relabel, recolor or delete the edge.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" DefaultEdgeType="EdgeType.SmoothStep">
+        <EdgeTemplate Context="ctx">
+            <BaseEdge Path="@ctx.Geometry.Path"
+                      Stroke="@((ctx.Edge.Data as string) ?? "var(--bf-edge-stroke)")"
+                      StrokeWidth="@(ctx.Edge.Selected ? 3 : 1.5)"
+                      Label="@ctx.Edge.Label"
+                      LabelX="@ctx.Geometry.LabelX"
+                      LabelY="@ctx.Geometry.LabelY" />
+        </EdgeTemplate>
+        <EdgeLabelTemplate Context="ctx">
+            @if (ctx.Edge.Selected)
+            {
+                <EdgeToolbar>
+                    <button class="btn-mini" @onclick="() => Relabel(ctx.Edge)">✎</button>
+                    <button class="btn-mini" @onclick="() => Recolor(ctx.Edge)">🎨</button>
+                    <button class="btn-mini danger" @onclick="() => Remove(ctx.Edge)">×</button>
+                </EdgeToolbar>
+            }
+        </EdgeLabelTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .btn-mini { border:1px solid #ddd; background:#fff; border-radius:4px; cursor:pointer; padding:1px 6px; font-size:13px; }
+    .btn-mini.danger { background:#fee2e2; color:#b91c1c; border-color:#fca5a5; }
+    .btn-mini:hover { background:#f3f4f6; }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private int _n;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Start", Position = new(240, 20) },
+            new Node { Id = "2", Label = "Middle", Position = new(240, 150) },
+            new Node { Id = "3", Type = "output", Label = "End", Position = new(240, 290) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Label = "step 1", Data = "#2563eb" },
+            new Edge { Id = "e2-3", Source = "2", Target = "3", Label = "step 2", Data = "#16a34a" },
+        ];
+    }
+
+    private void Relabel(Edge edge) => edge.Label = $"label {++_n}";
+
+    private void Recolor(Edge edge)
+    {
+        var colors = new[] { "#16a34a", "#dc2626", "#2563eb", "#9333ea", "#ea580c" };
+        edge.Data = colors[Random.Shared.Next(colors.Length)];
+    }
+
+    private void Remove(Edge edge) => _edges.RemoveAll(e => e.Id == edge.Id);
+}

@@ -1,0 +1,50 @@
+@page "/examples/validation"
+
+<PageTitle>BlazorFlow - Validation</PageTitle>
+
+<ExampleScaffold Title="Validation"
+                 Summary="Connections are validated while dragging. Here you may only connect handle 'A' to handle 'B'. Invalid targets are not highlighted and won't accept the drop.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" IsValidConnection="IsValid">
+        <NodeTemplate Context="node">
+            @if (node.Id == "A")
+            {
+                <div class="vnode">@node.Label</div>
+                <Handle Type="HandleType.Source" Position="Position.Right" Id="a" />
+            }
+            else
+            {
+                <Handle Type="HandleType.Target" Position="Position.Left" Id="b" Class="@(node.Id == "B" ? "handle-ok" : "handle-no")" />
+                <div class="vnode">@node.Label</div>
+            }
+        </NodeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .vnode { padding: 6px 10px; font-weight: 600; }
+    .handle-ok { background: #16a34a !important; }
+    .handle-no { background: #dc2626 !important; }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "A", Label = "A (source)", Position = new(60, 140) },
+            new Node { Id = "B", Label = "B — valid target", Position = new(340, 60) },
+            new Node { Id = "C", Label = "C — invalid target", Position = new(340, 220) },
+        ];
+        _edges = [];
+    }
+
+    // Only A's handle "a" connecting to handle "b" on node "B" is valid.
+    private bool IsValid(Connection c) => c.TargetHandle == "b" && c.Target == "B";
+}

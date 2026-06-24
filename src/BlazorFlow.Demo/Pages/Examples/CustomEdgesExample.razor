@@ -1,0 +1,48 @@
+@page "/examples/custom-edges"
+
+<PageTitle>BlazorFlow - Custom Edges</PageTitle>
+
+<ExampleScaffold Title="Custom Edges"
+                 Summary="A custom EdgeTemplate built on BaseEdge: the stroke color and width come from each edge's data, and selected edges thicken. Connection lines use the same smooth-step style.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                DefaultEdgeType="EdgeType.SmoothStep" ConnectionLineType="EdgeType.SmoothStep">
+        <EdgeTemplate Context="ctx">
+            <BaseEdge Path="@ctx.Geometry.Path"
+                      Stroke="@(EdgeColor(ctx.Edge))"
+                      StrokeWidth="@(ctx.Edge.Selected ? 4 : 2)"
+                      Label="@ctx.Edge.Label"
+                      LabelX="@ctx.Geometry.LabelX"
+                      LabelY="@ctx.Geometry.LabelY" />
+        </EdgeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+            <MiniMap />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Start", Position = new(250, 10) },
+            new Node { Id = "2", Label = "Path A", Position = new(80, 160) },
+            new Node { Id = "3", Label = "Path B", Position = new(420, 160) },
+            new Node { Id = "4", Type = "output", Label = "End", Position = new(250, 310) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Label = "warm", Data = "#ef4444" },
+            new Edge { Id = "e1-3", Source = "1", Target = "3", Label = "cool", Data = "#3b82f6" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4", Label = "ok", Data = "#22c55e" },
+            new Edge { Id = "e3-4", Source = "3", Target = "4", Label = "ok", Data = "#22c55e" },
+        ];
+    }
+
+    private string EdgeColor(Edge e) => (e.Data as string) ?? "var(--bf-edge-stroke)";
+}

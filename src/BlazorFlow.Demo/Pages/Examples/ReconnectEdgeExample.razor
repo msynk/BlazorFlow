@@ -1,0 +1,41 @@
+@page "/examples/reconnect-edge"
+
+<PageTitle>BlazorFlow - Reconnect Edge</PageTitle>
+
+<ExampleScaffold Title="Reconnect Edge"
+                 Summary="Select an edge, then drag either endpoint (the small circles) onto a different handle to rewire it. The log shows reconnect events.">
+    <Toolbar>
+        <span class="text-muted">@_log</span>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                    EdgesReconnectable="true" OnReconnect="OnReconnect">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private string _log = "Select an edge to reveal its draggable endpoints.";
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "A", Position = new(120, 20) },
+            new Node { Id = "2", Label = "B", Position = new(120, 140) },
+            new Node { Id = "3", Label = "C", Position = new(360, 80) },
+            new Node { Id = "4", Type = "output", Label = "D", Position = new(360, 220) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Reconnectable = true },
+        ];
+    }
+
+    private void OnReconnect(EdgeReconnect r) =>
+        _log = $"Reconnected {r.Edge.Id}: {r.Connection.Source} → {r.Connection.Target}";
+}

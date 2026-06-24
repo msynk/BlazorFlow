@@ -1,0 +1,54 @@
+@page "/examples/easy-connect"
+
+<PageTitle>BlazorFlow - Easy Connect</PageTitle>
+
+<ExampleScaffold Title="Easy Connect"
+                 Summary="Each node is fully covered by a connectable handle, so you can start and finish a connection from anywhere on a node. Uses loose connection mode and floating edges.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" ConnectionMode="ConnectionMode.Loose">
+        <NodeTemplate Context="node">
+            <div class="easy-node">@node.Label</div>
+            <Handle Type="HandleType.Source" Position="Position.Top"
+                    Style="position:absolute;inset:0;width:100%;height:100%;border-radius:10px;background:transparent;border:0;transform:none;" />
+        </NodeTemplate>
+        <EdgeTemplate Context="ctx">
+            <BaseEdge Path="@FloatingPath(ctx.Edge)" StrokeWidth="2" />
+        </EdgeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .easy-node {
+        display:flex; align-items:center; justify-content:center;
+        width:80px; height:50px; border-radius:10px;
+        background:#eef2ff; border:2px solid #6366f1; font-weight:600;
+    }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Label = "Drag me", Position = new(40, 40), Width = 80, Height = 50 },
+            new Node { Id = "2", Label = "to me", Position = new(300, 60), Width = 80, Height = 50 },
+            new Node { Id = "3", Label = "or me", Position = new(180, 220), Width = 80, Height = 50 },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2" } ];
+    }
+
+    private string FloatingPath(Edge edge)
+    {
+        var s = _nodes.FirstOrDefault(n => n.Id == edge.Source);
+        var t = _nodes.FirstOrDefault(n => n.Id == edge.Target);
+        if (s is null || t is null) return string.Empty;
+        var (src, srcPos, tgt, tgtPos) = GraphUtils.GetFloatingEdgeParams(s, t);
+        return EdgePath.Compute(EdgeType.Straight, src.X, src.Y, srcPos, tgt.X, tgt.Y, tgtPos).Path;
+    }
+}

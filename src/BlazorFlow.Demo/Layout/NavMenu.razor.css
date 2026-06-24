@@ -5,6 +5,7 @@
     height: 3.5rem;
     padding: 0 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
 }
 
 .brand {
@@ -51,6 +52,94 @@
     flex-direction: column;
     gap: 2px;
     padding: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Examples submenu */
+.nav-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-grouplabel {
+    margin: 0.7rem 0 0.2rem;
+    padding: 0 0.75rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(165, 180, 252, 0.8);
+}
+
+.nav-parent {
+    display: flex;
+    align-items: center;
+}
+
+.nav-parent ::deep .nav-link {
+    flex: 1;
+}
+
+.nav-expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 4px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.nav-expand:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.nav-caret {
+    display: inline-block;
+    transition: transform 0.15s ease;
+    font-size: 0.7rem;
+}
+
+.nav-caret.open {
+    transform: rotate(90deg);
+}
+
+.nav-submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px 0.9rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.nav-subgroup {
+    margin: 0.5rem 0 0.15rem;
+    padding: 0 0.75rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(165, 180, 252, 0.8);
+}
+
+.nav-menu ::deep .nav-link.nav-sublink {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.nav-menu ::deep .nav-link.nav-sublink.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
 }
 
 .nav-menu ::deep .nav-link {

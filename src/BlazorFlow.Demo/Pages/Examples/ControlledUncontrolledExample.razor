@@ -1,0 +1,60 @@
+@page "/examples/controlled-uncontrolled"
+
+<PageTitle>BlazorFlow - Controlled vs Uncontrolled</PageTitle>
+
+<ExampleScaffold Title="Controlled vs Uncontrolled"
+                 Summary="In controlled mode you observe NodesChanged/EdgesChanged and keep your own count in sync. In uncontrolled mode the canvas manages its own list. Toggle to compare.">
+    <Toolbar>
+        <label><input type="checkbox" checked="@_controlled" @onchange="e => _controlled = (bool)e.Value!" /> controlled</label>
+        @if (_controlled)
+        {
+            <span class="text-muted">observed: @_nodeCount nodes, @_edgeCount edges (last change @_lastChange)</span>
+        }
+        else
+        {
+            <span class="text-muted">uncontrolled — the canvas owns its state</span>
+        }
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                    NodesChanged="OnNodesChanged" EdgesChanged="OnEdgesChanged">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private bool _controlled = true;
+    private int _nodeCount, _edgeCount;
+    private string _lastChange = "—";
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Drag / connect me", Position = new(160, 40), Width = 180 },
+            new Node { Id = "2", Label = "Node 2", Position = new(120, 200) },
+            new Node { Id = "3", Label = "Node 3", Position = new(360, 200) },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2" } ];
+        _nodeCount = _nodes.Count;
+        _edgeCount = _edges.Count;
+    }
+
+    private void OnNodesChanged(List<Node> nodes)
+    {
+        if (!_controlled) return;
+        _nodeCount = nodes.Count;
+        _lastChange = $"nodes @ {DateTime.Now:HH:mm:ss}";
+    }
+
+    private void OnEdgesChanged(List<Edge> edges)
+    {
+        if (!_controlled) return;
+        _edgeCount = edges.Count;
+        _lastChange = $"edges @ {DateTime.Now:HH:mm:ss}";
+    }
+}

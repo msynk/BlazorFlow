@@ -1,0 +1,69 @@
+@page "/minimap"
+
+<PageTitle>BlazorFlow - MiniMap Customization</PageTitle>
+
+<div class="demo-header">
+    <h3>MiniMap Customization</h3>
+    <p class="text-muted">
+        The MiniMap gained per-node styling and interactivity: <code>NodeColorFunc</code>,
+        <code>NodeStrokeColorFunc</code>, <code>BorderRadius</code>, an SVG <code>NodeTemplate</code>, plus
+        <code>Pannable</code> and <code>Zoomable</code>. Drag inside the minimap to pan and scroll over it to
+        zoom. Toggle the options below.
+    </p>
+</div>
+
+<div class="example-toolbar">
+    <label><input type="checkbox" checked="@_pannable" @onchange="e => _pannable = (bool)e.Value!" /> pannable</label>
+    <label><input type="checkbox" checked="@_zoomable" @onchange="e => _zoomable = (bool)e.Value!" /> zoomable</label>
+    <label><input type="checkbox" checked="@_useTemplate" @onchange="e => _useTemplate = (bool)e.Value!" /> custom SVG node template</label>
+</div>
+
+<div class="demo-canvas" style="height: calc(100vh - 250px);">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+        @if (_useTemplate)
+        {
+            <MiniMap Width="240" Height="180" Pannable="_pannable" Zoomable="_zoomable">
+                <NodeTemplate Context="node">
+                    <circle cx="@Inv(node.GetRect().Width / 2)" cy="@Inv(node.GetRect().Height / 2)"
+                            r="@Inv(Math.Min(node.GetRect().Width, node.GetRect().Height) / 2)"
+                            fill="@NodeColor(node)" stroke="@(node.Selected ? "#111827" : "transparent")" stroke-width="3" />
+                </NodeTemplate>
+            </MiniMap>
+        }
+        else
+        {
+            <MiniMap Width="240" Height="180" Pannable="_pannable" Zoomable="_zoomable"
+                     NodeColorFunc="NodeColor"
+                     NodeStrokeColorFunc="@(n => n.Selected ? "#111827" : "transparent")"
+                     NodeStrokeWidth="3" BorderRadius="6" />
+        }
+    </FlowCanvas>
+</div>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private bool _pannable = true, _zoomable = true, _useTemplate;
+
+    protected override void OnInitialized()
+    {
+        for (var i = 0; i < 10; i++)
+        {
+            var type = i == 0 ? "input" : i == 9 ? "output" : "default";
+            _nodes.Add(new Node { Id = i.ToString(), Type = type, Label = $"Node {i}", Position = new((i % 5) * 180, (i / 5) * 200) });
+            if (i > 0)
+                _edges.Add(new Edge { Id = $"e{i}", Source = (i - 1).ToString(), Target = i.ToString() });
+        }
+    }
+
+    private string NodeColor(Node n) => n.Type switch
+    {
+        "input" => "#16a34a",
+        "output" => "#6366f1",
+        _ => "#fbbf24",
+    };
+
+    private static string Inv(double v) => v.ToString(System.Globalization.CultureInfo.InvariantCulture);
+}

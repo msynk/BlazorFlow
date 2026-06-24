@@ -1,0 +1,80 @@
+@page "/examples/save-restore"
+@inject IJSRuntime JS
+
+<PageTitle>BlazorFlow - Save & Restore</PageTitle>
+
+<ExampleScaffold Title="Save & Restore"
+                 Summary="Persist the flow (nodes, edges and viewport) to the browser's local storage and reload it later. Move some nodes, Save, change things, then Restore.">
+    <Toolbar>
+        <button class="btn btn-sm btn-primary" @onclick="Save">Save</button>
+        <button class="btn btn-sm" @onclick="Restore">Restore</button>
+        <button class="btn btn-sm" @onclick="AddNode">Add node</button>
+        <span class="text-muted">@_status</span>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                    OnViewportChanged="v => _vp = v">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private const string StorageKey = "blazorflow-save-restore";
+
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private Viewport _vp = Viewport.Identity;
+    private string _status = "";
+    private int _id = 2;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Node 1", Position = new(120, 40) },
+            new Node { Id = "2", Type = "output", Label = "Node 2", Position = new(120, 200) },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2" } ];
+    }
+
+    private record SavedEdge(string Id, string Source, string Target, string? SourceHandle, string? TargetHandle, string Type, string? Label, bool Animated);
+    private record SavedNode(string Id, string Type, string? Label, double X, double Y, double? Width, double? Height, string? Style);
+    private record SavedFlow(List<SavedNode> Nodes, List<SavedEdge> Edges, double Vx, double Vy, double Vz);
+
+    private async Task Save()
+    {
+        var snap = _flow?.ToObject();
+        if (snap is null) return;
+        var dto = new SavedFlow(
+            snap.Nodes.Select(n => new SavedNode(n.Id, n.Type, n.Label, n.Position.X, n.Position.Y, n.Width, n.Height, n.Style)).ToList(),
+            snap.Edges.Select(e => new SavedEdge(e.Id, e.Source, e.Target, e.SourceHandle, e.TargetHandle, e.Type.ToString(), e.Label, e.Animated)).ToList(),
+            snap.Viewport.X, snap.Viewport.Y, snap.Viewport.Zoom);
+        var json = System.Text.Json.JsonSerializer.Serialize(dto);
+        await JS.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+        _status = $"saved {dto.Nodes.Count} nodes at {DateTime.Now:HH:mm:ss}";
+    }
+
+    private async Task Restore()
+    {
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+        if (string.IsNullOrEmpty(json)) { _status = "nothing saved yet"; return; }
+
+        var dto = System.Text.Json.JsonSerializer.Deserialize<SavedFlow>(json);
+        if (dto is null) return;
+
+        _nodes = dto.Nodes.Select(n => new Node { Id = n.Id, Type = n.Type, Label = n.Label, Position = new(n.X, n.Y), Width = n.Width, Height = n.Height, Style = n.Style }).ToList();
+        _edges = dto.Edges.Select(e => new Edge { Id = e.Id, Source = e.Source, Target = e.Target, SourceHandle = e.SourceHandle, TargetHandle = e.TargetHandle, Type = Enum.Parse<EdgeType>(e.Type), Label = e.Label, Animated = e.Animated }).ToList();
+        _flow?.Refresh(remeasure: true);
+        _flow?.SetViewport(new Viewport(dto.Vx, dto.Vy, dto.Vz));
+        _status = "restored";
+    }
+
+    private void AddNode()
+    {
+        _id++;
+        _flow?.AddNodes(new Node { Id = _id.ToString(), Label = $"Node {_id}", Position = new(Random.Shared.Next(40, 360), Random.Shared.Next(40, 280)) });
+    }
+}

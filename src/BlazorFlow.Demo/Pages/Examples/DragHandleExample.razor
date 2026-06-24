@@ -1,0 +1,50 @@
+@page "/examples/drag-handle"
+
+<PageTitle>BlazorFlow - Drag Handle</PageTitle>
+
+<ExampleScaffold Title="Drag Handle"
+                 Summary="The node only moves when you drag the small grip area. Dragging the body does nothing, so the body can host interactive content.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <NodeTemplate Context="node">
+            @if (node.Type == "draggable")
+            {
+                <Handle Type="HandleType.Target" Position="Position.Top" />
+                <div class="dh-node">
+                    <DragHandle Class="dh-node__grip">⋮⋮</DragHandle>
+                    <div class="dh-node__body">@node.Label</div>
+                </div>
+                <Handle Type="HandleType.Source" Position="Position.Bottom" />
+            }
+            else
+            {
+                <BlazorFlow.Internal.DefaultNode Node="node" />
+            }
+        </NodeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .dh-node { display:flex; align-items:stretch; }
+    .dh-node__grip { display:flex; align-items:center; padding:0 6px; cursor:grab; color:#888; border-right:1px solid #eee; user-select:none; }
+    .dh-node__grip:active { cursor:grabbing; }
+    .dh-node__body { padding:8px 12px; }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "draggable", Label = "Drag me by the grip", Position = new(120, 60), UseCustomDragHandle = true },
+            new Node { Id = "2", Type = "draggable", Label = "Me too", Position = new(160, 220), UseCustomDragHandle = true },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2" } ];
+    }
+}

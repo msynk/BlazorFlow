@@ -203,3 +203,44 @@ code {
     box-shadow: var(--bf-shadow);
     overflow: hidden;
 }
+
+/* Example pages: toolbar above the canvas */
+.example-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--bf-border);
+    border-radius: var(--bf-radius);
+    background: var(--bf-surface);
+    font-size: 0.88rem;
+}
+
+.example-toolbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.example-toolbar select,
+.example-toolbar input[type="text"],
+.example-toolbar input:not([type]) {
+    padding: 4px 6px;
+    border: 1px solid var(--bf-border);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.example-description {
+    margin-top: 0.4rem;
+    line-height: 1.55;
+    max-width: 70ch;
+}
+
+/* Highlighted nav entry for the examples gallery */
+.nav-link--accent {
+    color: var(--bf-primary);
+    font-weight: 600;
+}

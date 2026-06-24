@@ -1,0 +1,33 @@
+@page "/examples/a11y"
+
+<PageTitle>BlazorFlow - Accessibility</PageTitle>
+
+<ExampleScaffold Title="Accessibility"
+                 Summary="Nodes are keyboard focusable with descriptive aria labels. Tab to a node, then use the arrow keys to move it (hold Shift for larger steps). Delete removes the selection.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" DisableKeyboardA11y="false">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+    </FlowCanvas>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Input Node", Position = new(250, 25), AriaLabel = "Input node, top of the flow" },
+            new Node { Id = "2", Label = "Node 2", Position = new(150, 150), AriaLabel = "Default node two" },
+            new Node { Id = "3", Label = "Node 3", Position = new(380, 150), AriaLabel = "Default node three" },
+            new Node { Id = "4", Type = "output", Label = "Output Node", Position = new(260, 280), AriaLabel = "Output node, end of the flow" },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2" },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4" },
+        ];
+    }
+}

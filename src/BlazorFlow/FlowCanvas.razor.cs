@@ -44,8 +44,24 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     /// <summary>Raised when the user begins dragging a connection from a handle.</summary>
     [Parameter] public EventCallback<ConnectionStartInfo> OnConnectStart { get; set; }
 
-    /// <summary>Raised when a connection drag ends, whether it produced an edge or not.</summary>
-    [Parameter] public EventCallback OnConnectEnd { get; set; }
+    /// <summary>
+    /// Raised when a connection drag ends, whether it produced an edge or not. The payload
+    /// carries the final flow/screen position and whether the drop landed on a valid handle,
+    /// enabling interactions like adding a node where the connection was released.
+    /// </summary>
+    [Parameter] public EventCallback<ConnectEndInfo> OnConnectEnd { get; set; }
+
+    /// <summary>
+    /// Raised on connection start, on each pointer move while connecting, and once with
+    /// <c>null</c> when the connection ends. Mirrors React Flow's <c>useConnection</c> updates.
+    /// </summary>
+    [Parameter] public EventCallback<ConnectionLineContext?> OnConnectionChange { get; set; }
+
+    /// <summary>
+    /// Optional custom renderer for the line drawn while creating a connection. Receives the
+    /// live <see cref="ConnectionLineContext"/>; render SVG. When null, a default path is drawn.
+    /// </summary>
+    [Parameter] public RenderFragment<ConnectionLineContext>? ConnectionLineTemplate { get; set; }
 
     /// <summary>Globally enables dragging existing edge endpoints to new handles.</summary>
     [Parameter] public bool EdgesReconnectable { get; set; } = true;
@@ -176,6 +192,13 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     [Parameter] public bool ElementsSelectable { get; set; } = true;
     [Parameter] public bool DeleteKeyEnabled { get; set; } = true;
 
+    /// <summary>
+    /// Minimum pointer travel in screen pixels before a node drag begins. Until this distance
+    /// is exceeded the gesture is treated as a click (so the node selects but does not move).
+    /// Mirrors React Flow's <c>nodeDragThreshold</c>.
+    /// </summary>
+    [Parameter] public double NodeDragThreshold { get; set; } = 1;
+
     /// <summary>Disables keyboard interactions (node focus + arrow-key movement) when true.</summary>
     [Parameter] public bool DisableKeyboardA11y { get; set; }
 
@@ -226,6 +249,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
 
     // node drag
     private bool _draggingNodes;
+    private bool _dragArmed;
     private Node? _dragPrimary;
     private double _dragStartClientX, _dragStartClientY;
     private readonly List<(Node node, XYPosition start)> _dragSet = [];
@@ -234,6 +258,8 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     private bool _connecting;
     private ConnectionSource _connSource;
     private XYPosition _connEnd;
+    private double _connEndClientX, _connEndClientY;
+    private bool _connEndValid;
     private (string nodeId, string? handleId, HandleType type)? _connHover;
     private Edge? _reconnectEdge;
 
@@ -483,6 +509,29 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         return result.Path;
     }
 
+    /// <summary>Builds the live connection state for the connection-line template / OnConnectionChange.</summary>
+    private ConnectionLineContext BuildConnectionLineContext()
+    {
+        var s = _connSource;
+        return new ConnectionLineContext
+        {
+            FromNode = s.NodeId,
+            FromHandle = s.HandleId,
+            FromHandleType = s.Type,
+            FromPosition = s.Position,
+            From = s.Anchor,
+            To = _connEnd,
+            ToPosition = OppositePosition(s.Position),
+            IsValid = _connHover is { } h && IsValidConnectionTarget(h.nodeId, h.handleId, h.type),
+        };
+    }
+
+    private void NotifyConnectionChange()
+    {
+        if (OnConnectionChange.HasDelegate)
+            _ = OnConnectionChange.InvokeAsync(_connecting ? BuildConnectionLineContext() : null);
+    }
+
     // ---- pane interactions ----
 
     /// <summary>True when the configured multi-selection modifier is held.</summary>
@@ -561,8 +610,16 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         }
         else if (_draggingNodes)
         {
-            var dx = (e.ClientX - _dragStartClientX) / _viewport.Zoom;
-            var dy = (e.ClientY - _dragStartClientY) / _viewport.Zoom;
+            var dxRaw = e.ClientX - _dragStartClientX;
+            var dyRaw = e.ClientY - _dragStartClientY;
+            // Hold off moving until the pointer has travelled past the drag threshold.
+            if (!_dragArmed)
+            {
+                if (Math.Sqrt(dxRaw * dxRaw + dyRaw * dyRaw) < NodeDragThreshold) return;
+                _dragArmed = true;
+            }
+            var dx = dxRaw / _viewport.Zoom;
+            var dy = dyRaw / _viewport.Zoom;
             foreach (var (node, start) in _dragSet)
                 node.Position = ClampNodePosition(node, Snap(new XYPosition(start.X + dx, start.Y + dy)));
             if (_dragPrimary is not null)
@@ -572,6 +629,9 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         else if (_connecting)
         {
             _connEnd = ScreenToFlow(e);
+            _connEndClientX = e.ClientX;
+            _connEndClientY = e.ClientY;
+            NotifyConnectionChange();
             StateHasChanged();
         }
         else if (_selecting)
@@ -687,6 +747,12 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
+        if (e.Key == "Escape" && _connecting)
+        {
+            CancelConnection();
+            return;
+        }
+
         if (DeleteKeyEnabled && e.Key is "Delete" or "Backspace")
         {
             await DeleteSelectionAsync();
@@ -762,6 +828,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         if (!NodesDraggable || !node.Draggable) return;
 
         _draggingNodes = true;
+        _dragArmed = false;
         _dragPrimary = node;
         _dragStartClientX = e.ClientX;
         _dragStartClientY = e.ClientY;
@@ -880,7 +947,9 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         _connSource = new ConnectionSource(nodeId, handleId, handleType, pos, new XYPosition(x, y));
         _connEnd = new XYPosition(x, y);
         _connecting = true;
+        _connEndValid = false;
         _ = OnConnectStart.InvokeAsync(new ConnectionStartInfo(nodeId, handleId, handleType));
+        NotifyConnectionChange();
         _ = RefreshPaneRectAsync();
         StateHasChanged();
     }
@@ -928,6 +997,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
 
         if (IsValidConnectionTarget(nodeId, handleId, handleType))
         {
+            _connEndValid = true;
             // Normalize so the edge always flows source-handle -> target-handle.
             var (sourceNode, sourceHandle, targetNode, targetHandle) =
                 _connSource.Type == HandleType.Source
@@ -1006,10 +1076,14 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
 
     private void CancelConnection()
     {
+        var start = new ConnectionStartInfo(_connSource.NodeId, _connSource.HandleId, _connSource.Type);
+        var endInfo = new ConnectEndInfo(start, _connEnd, _connEndClientX, _connEndClientY, _connEndValid);
+
         _connecting = false;
         _connHover = null;
         _reconnectEdge = null;
-        _ = OnConnectEnd.InvokeAsync();
+        NotifyConnectionChange();
+        _ = OnConnectEnd.InvokeAsync(endInfo);
         StateHasChanged();
     }
 
@@ -1017,6 +1091,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     {
         if (!_connecting) return;
         _connHover = isOver ? (nodeId, handleId, handleType) : null;
+        NotifyConnectionChange();
     }
 
     public bool IsValidConnectionTarget(string nodeId, string? handleId, HandleType handleType)

@@ -1,0 +1,46 @@
+@page "/examples/color-mode"
+
+<PageTitle>BlazorFlow - Color Mode</PageTitle>
+
+<ExampleScaffold Title="Color Mode"
+                 Summary="Switch between light, dark and system color themes. The canvas, nodes, edges and overlays adapt to the selected ColorMode.">
+    <Toolbar>
+        <label>theme:
+            <select @onchange="e => _mode = Enum.Parse<ColorMode>(e.Value!.ToString()!)">
+                <option value="Light">Light</option>
+                <option value="Dark">Dark</option>
+                <option value="System">System</option>
+            </select>
+        </label>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" ColorMode="_mode">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+            <MiniMap />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private ColorMode _mode = ColorMode.Light;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Node 1", Position = new(250, 20) },
+            new Node { Id = "2", Label = "Node 2", Position = new(150, 140) },
+            new Node { Id = "3", Label = "Node 3", Position = new(380, 140) },
+            new Node { Id = "4", Type = "output", Label = "Node 4", Position = new(250, 260) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Animated = true },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4" },
+        ];
+    }
+}

@@ -1,0 +1,66 @@
+@page "/examples/intersection"
+
+<PageTitle>BlazorFlow - Intersection</PageTitle>
+
+<ExampleScaffold Title="Intersection"
+                 Summary="Drag the highlighted node around. Any node it overlaps is detected with GetIntersectingNodes and turns orange in real time.">
+    <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                OnNodeDrag="OnNodeDrag" OnNodeDragStop="OnNodeDragStop">
+        <NodeTemplate Context="node">
+            <div class="@NodeClass(node)">@node.Label</div>
+        </NodeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .ix-node { padding:14px 18px; border:1px solid #bbb; border-radius:8px; background:#fff; font-weight:600; }
+    .ix-node.dragging { border-color:#6366f1; background:#eef2ff; }
+    .ix-node.intersecting { border-color:#ea580c; background:#ffedd5; }
+</style>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private readonly HashSet<string> _intersecting = [];
+    private string? _draggingId;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "drag", Label = "Drag me", Position = new(40, 40), Width = 110, Height = 60 },
+            new Node { Id = "a", Label = "A", Position = new(260, 30), Width = 110, Height = 60 },
+            new Node { Id = "b", Label = "B", Position = new(260, 160), Width = 110, Height = 60 },
+            new Node { Id = "c", Label = "C", Position = new(440, 90), Width = 110, Height = 60 },
+        ];
+        _edges = [];
+    }
+
+    private string NodeClass(Node node)
+    {
+        var cls = "ix-node";
+        if (node.Id == _draggingId) cls += " dragging";
+        if (_intersecting.Contains(node.Id)) cls += " intersecting";
+        return cls;
+    }
+
+    private void OnNodeDrag(Node node)
+    {
+        _draggingId = node.Id;
+        _intersecting.Clear();
+        if (_flow is not null)
+            foreach (var n in _flow.GetIntersectingNodes(node))
+                _intersecting.Add(n.Id);
+    }
+
+    private void OnNodeDragStop(Node node)
+    {
+        _draggingId = null;
+        _intersecting.Clear();
+    }
+}

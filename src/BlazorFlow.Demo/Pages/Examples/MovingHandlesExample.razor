@@ -1,0 +1,76 @@
+@page "/examples/moving-handles"
+
+<PageTitle>BlazorFlow - Moving Handles</PageTitle>
+
+<ExampleScaffold Title="Moving Handles"
+                 Summary="Add or remove handles on a node at runtime. After the handle layout changes, the canvas re-measures so connected edges snap to the correct anchors.">
+    <Toolbar>
+        <button class="btn btn-sm btn-primary" @onclick="AddHandle">Add handle</button>
+        <button class="btn btn-sm" @onclick="RemoveHandle">Remove handle</button>
+        <span class="text-muted">@_handleCount source handle(s)</span>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <NodeTemplate Context="node">
+                @if (node.Id == "src")
+                {
+                    <div class="mh-node">@node.Label</div>
+                    @for (var i = 0; i < _handleCount; i++)
+                    {
+                        var top = (i + 1) * 100.0 / (_handleCount + 1);
+                        <Handle Type="HandleType.Source" Position="Position.Right" Id="@($"h{i}")" Style="@($"top:{top}%")" />
+                    }
+                }
+                else
+                {
+                    <Handle Type="HandleType.Target" Position="Position.Left" />
+                    <div class="mh-node">@node.Label</div>
+                }
+            </NodeTemplate>
+            <ChildContent>
+                <Background Variant="BackgroundVariant.Dots" Gap="16" />
+                <Controls />
+            </ChildContent>
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+<style>
+    .mh-node { padding: 12px 16px; font-weight: 600; }
+</style>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private int _handleCount = 2;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "src", Label = "Source", Position = new(60, 100), Height = 120 },
+            new Node { Id = "a", Label = "A", Position = new(360, 40) },
+            new Node { Id = "b", Label = "B", Position = new(360, 180) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e0", Source = "src", SourceHandle = "h0", Target = "a" },
+            new Edge { Id = "e1", Source = "src", SourceHandle = "h1", Target = "b" },
+        ];
+    }
+
+    private void AddHandle()
+    {
+        _handleCount++;
+        _flow?.Refresh(remeasure: true);
+    }
+
+    private void RemoveHandle()
+    {
+        if (_handleCount <= 1) return;
+        _handleCount--;
+        _edges.RemoveAll(e => e.SourceHandle == $"h{_handleCount}");
+        _flow?.Refresh(remeasure: true);
+    }
+}

@@ -1,0 +1,38 @@
+@page "/examples/node-resizer"
+
+<PageTitle>BlazorFlow - Node Resizer</PageTitle>
+
+<ExampleScaffold Title="Node Resizer"
+                 Summary="Select a node to reveal its NodeResizer controls, then drag a corner or edge to resize. One node keeps its aspect ratio.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <NodeTemplate Context="node">
+            <NodeResizer MinWidth="80" MinHeight="50" KeepAspectRatio="@(node.Id == "2")" />
+            <Handle Type="HandleType.Target" Position="Position.Left" />
+            <div class="rs-node">@node.Label</div>
+            <Handle Type="HandleType.Source" Position="Position.Right" />
+        </NodeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .rs-node { display:flex; align-items:center; justify-content:center; width:100%; height:100%; font-weight:600; }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Label = "Resize me", Position = new(80, 60), Width = 160, Height = 70, Style = "background:#dbeafe;" },
+            new Node { Id = "2", Label = "Keep ratio", Position = new(340, 120), Width = 120, Height = 120, Style = "background:#dcfce7;" },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2", Type = EdgeType.SmoothStep } ];
+    }
+}

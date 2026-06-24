@@ -1,0 +1,67 @@
+@page "/add-node-on-drop"
+
+<PageTitle>BlazorFlow - Add Node on Edge Drop</PageTitle>
+
+<div class="demo-header">
+    <h3>Add Node on Edge Drop</h3>
+    <p class="text-muted">
+        Demonstrates the enriched <code>OnConnectEnd</code> callback. Its <code>ConnectEndInfo</code> payload
+        carries the originating handle, the drop position in flow coordinates and whether the drop landed on a
+        valid handle. Drag a connection into empty space to spawn a new, already-connected node where you
+        released; drop on a handle to connect normally.
+    </p>
+</div>
+
+<div class="example-toolbar">
+    <button class="btn btn-sm" @onclick="Reset">Reset</button>
+    <span class="text-muted">@_nodes.Count nodes · @_edges.Count edges · last drop: @_lastDrop</span>
+</div>
+
+<div class="demo-canvas" style="height: calc(100vh - 250px);">
+    <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                OnConnectEnd="OnConnectEnd">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+        <MiniMap />
+    </FlowCanvas>
+</div>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private int _id;
+    private string _lastDrop = "—";
+
+    protected override void OnInitialized() => Reset();
+
+    private void Reset()
+    {
+        _id = 1;
+        _nodes = [ new Node { Id = "1", Type = "input", Label = "Drag my handle to empty space", Position = new(180, 40), Width = 240 } ];
+        _edges = [];
+        _lastDrop = "—";
+        _flow?.Refresh(remeasure: true);
+    }
+
+    private void OnConnectEnd(ConnectEndInfo info)
+    {
+        if (info.IsValid)
+        {
+            _lastDrop = "connected to a handle";
+            return;
+        }
+
+        _id++;
+        var id = _id.ToString();
+        _nodes.Add(new Node
+        {
+            Id = id,
+            Label = $"Node {id}",
+            Position = new(info.FlowPosition.X - 75, info.FlowPosition.Y - 20),
+        });
+        _edges.Add(new Edge { Id = $"e{info.Start.NodeId}-{id}", Source = info.Start.NodeId, Target = id, Animated = true });
+        _lastDrop = $"spawned node {id} at ({info.FlowPosition.X:0}, {info.FlowPosition.Y:0})";
+        _flow?.Refresh(remeasure: true);
+    }
+}

@@ -1,0 +1,46 @@
+@page "/examples/add-node-on-edge-drop"
+
+<PageTitle>BlazorFlow - Add Node on Edge Drop</PageTitle>
+
+<ExampleScaffold Title="Add Node on Edge Drop"
+                 Summary="Drag a connection from a handle and release it on empty canvas. A new node is created where you dropped, already connected to the source. Releasing on a handle connects normally.">
+    <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                OnConnectEnd="OnConnectEnd">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+    </FlowCanvas>
+</ExampleScaffold>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private int _id = 1;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Drag from my handle", Position = new(180, 40), Width = 200 },
+        ];
+        _edges = [];
+    }
+
+    private void OnConnectEnd(ConnectEndInfo info)
+    {
+        // Only spawn a node when the connection was dropped on empty canvas.
+        if (info.IsValid) return;
+
+        _id++;
+        var id = _id.ToString();
+        _nodes.Add(new Node
+        {
+            Id = id,
+            Label = $"Node {id}",
+            // Center the new node on the drop point.
+            Position = new(info.FlowPosition.X - 75, info.FlowPosition.Y - 20),
+        });
+        _edges.Add(new Edge { Id = $"e{info.Start.NodeId}-{id}", Source = info.Start.NodeId, Target = id });
+        _flow?.Refresh(remeasure: true);
+    }
+}

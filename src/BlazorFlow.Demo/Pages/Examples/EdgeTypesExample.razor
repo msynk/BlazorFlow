@@ -1,0 +1,54 @@
+@page "/examples/edge-types"
+
+<PageTitle>BlazorFlow - Edge Types</PageTitle>
+
+<ExampleScaffold Title="Edge Types"
+                 Summary="Pick the default edge type for new connections, and toggle animation and markers. Drag between handles to create edges using the current settings.">
+    <Toolbar>
+        <label>type:
+            <select @onchange="e => _type = Enum.Parse<EdgeType>(e.Value!.ToString()!)">
+                @foreach (var t in Enum.GetValues<EdgeType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </label>
+        <label><input type="checkbox" @onchange="e => _animated = (bool)e.Value!" /> animated</label>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true"
+                    DefaultEdgeType="_type"
+                    ConnectionLineType="_type"
+                    DefaultEdgeOptions="_options">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private EdgeType _type = EdgeType.Bezier;
+    private bool _animated;
+
+    private DefaultEdgeOptions _options => new() { Animated = _animated };
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Source", Position = new(250, 20) },
+            new Node { Id = "2", Label = "A", Position = new(120, 150) },
+            new Node { Id = "3", Label = "B", Position = new(380, 150) },
+            new Node { Id = "4", Type = "output", Label = "Target", Position = new(250, 290) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Type = EdgeType.Bezier },
+            new Edge { Id = "e1-3", Source = "1", Target = "3", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e2-4", Source = "2", Target = "4", Type = EdgeType.Step },
+            new Edge { Id = "e3-4", Source = "3", Target = "4", Type = EdgeType.Straight },
+        ];
+    }
+}

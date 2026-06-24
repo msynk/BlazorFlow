@@ -1,0 +1,48 @@
+@page "/examples/use-connection"
+
+<PageTitle>BlazorFlow - Use Connection</PageTitle>
+
+<ExampleScaffold Title="Use Connection"
+                 Summary="Observe the in-progress connection live via OnConnectionChange (the equivalent of React Flow's useConnection hook). Start dragging from a handle to watch the panel update.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" OnConnectionChange="OnConnectionChange">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+        <Panel Position="top-right">
+            <div class="conn-panel">
+                @if (_conn is null)
+                {
+                    <span class="text-muted">no active connection</span>
+                }
+                else
+                {
+                    <div><strong>from:</strong> @_conn.FromNode (@_conn.FromHandleType)</div>
+                    <div><strong>to:</strong> @($"({_conn.To.X:0}, {_conn.To.Y:0})")</div>
+                    <div><strong>valid target:</strong> @(_conn.IsValid ? "yes" : "no")</div>
+                }
+            </div>
+        </Panel>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .conn-panel { background:#fff; border:1px solid var(--bf-border); border-radius:8px; padding:8px 10px; font-size:12px; min-width:180px; box-shadow:var(--bf-shadow); }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private ConnectionLineContext? _conn;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Drag from here", Position = new(120, 40), Width = 160 },
+            new Node { Id = "2", Label = "Node B", Position = new(80, 220) },
+            new Node { Id = "3", Label = "Node C", Position = new(320, 220) },
+        ];
+        _edges = [];
+    }
+
+    private void OnConnectionChange(ConnectionLineContext? c) => _conn = c;
+}

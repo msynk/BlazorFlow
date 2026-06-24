@@ -1,0 +1,49 @@
+@page "/examples/broken-nodes"
+
+<PageTitle>BlazorFlow - Broken Nodes</PageTitle>
+
+<ExampleScaffold Title="Broken Nodes"
+                 Summary="Edges that reference missing nodes or handles are simply skipped instead of throwing. Toggle the missing node to see its edges appear and disappear.">
+    <Toolbar>
+        <button class="btn btn-sm" @onclick="ToggleGhost">@(_hasGhost ? "Remove" : "Add") node 3</button>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <Background />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private bool _hasGhost;
+
+    protected override void OnInitialized() => Build();
+
+    private void Build()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Node 1", Position = new(100, 50) },
+            new Node { Id = "2", Label = "Node 2", Position = new(100, 200) },
+        ];
+        if (_hasGhost)
+            _nodes.Add(new Node { Id = "3", Type = "output", Label = "Node 3", Position = new(320, 200) });
+
+        // e1-3 / e3-2 reference node "3" which may not exist; they are skipped gracefully.
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2" },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e3-2", Source = "3", Target = "2", TargetHandle = "does-not-exist" },
+        ];
+    }
+
+    private void ToggleGhost()
+    {
+        _hasGhost = !_hasGhost;
+        Build();
+    }
+}

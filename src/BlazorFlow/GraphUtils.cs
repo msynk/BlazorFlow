@@ -103,4 +103,70 @@ public static class GraphUtils
         var y = paneHeight / 2 - (bounds.Y + h / 2) * zoom;
         return new Viewport(x, y, zoom);
     }
+
+    // ---- floating edges (port of React Flow's floating-edge utils) ----
+
+    /// <summary>
+    /// Returns the point on <paramref name="intersectionNode"/>'s border that lies on the line
+    /// toward <paramref name="targetNode"/>'s center. Port of React Flow's <c>getNodeIntersection</c>.
+    /// </summary>
+    public static XYPosition GetNodeIntersection(Node intersectionNode, Node targetNode)
+    {
+        var iSize = intersectionNode.EffectiveSize;
+        var iPos = intersectionNode.AbsolutePosition;
+        var tSize = targetNode.EffectiveSize;
+        var tPos = targetNode.AbsolutePosition;
+
+        var w = iSize.Width / 2;
+        var h = iSize.Height / 2;
+
+        var x2 = iPos.X + w;
+        var y2 = iPos.Y + h;
+        var x1 = tPos.X + tSize.Width / 2;
+        var y1 = tPos.Y + tSize.Height / 2;
+
+        if (w == 0 || h == 0) return new XYPosition(x2, y2);
+
+        var xx1 = (x1 - x2) / (2 * w) - (y1 - y2) / (2 * h);
+        var yy1 = (x1 - x2) / (2 * w) + (y1 - y2) / (2 * h);
+        var denom = Math.Abs(xx1) + Math.Abs(yy1);
+        if (denom == 0) return new XYPosition(x2, y2);
+        var a = 1 / denom;
+        var xx3 = a * xx1;
+        var yy3 = a * yy1;
+        var x = w * (xx3 + yy3) + x2;
+        var y = h * (-xx3 + yy3) + y2;
+        return new XYPosition(x, y);
+    }
+
+    /// <summary>Returns which side of <paramref name="node"/> the given border point sits on. Port of <c>getEdgePosition</c>.</summary>
+    public static Position GetEdgePosition(Node node, XYPosition point)
+    {
+        var size = node.EffectiveSize;
+        var pos = node.AbsolutePosition;
+        var nx = Math.Round(pos.X);
+        var ny = Math.Round(pos.Y);
+        var px = Math.Round(point.X);
+        var py = Math.Round(point.Y);
+
+        if (px <= nx + 1) return Position.Left;
+        if (px >= nx + size.Width - 1) return Position.Right;
+        if (py <= ny + 1) return Position.Top;
+        if (py >= ny + size.Height - 1) return Position.Bottom;
+        return Position.Top;
+    }
+
+    /// <summary>
+    /// Computes floating edge endpoints (anchored to each node's border facing the other node).
+    /// Returns the source/target points and the sides they attach to.
+    /// </summary>
+    public static (XYPosition Source, Position SourcePos, XYPosition Target, Position TargetPos)
+        GetFloatingEdgeParams(Node source, Node target)
+    {
+        var sourcePoint = GetNodeIntersection(source, target);
+        var targetPoint = GetNodeIntersection(target, source);
+        return (
+            sourcePoint, GetEdgePosition(source, sourcePoint),
+            targetPoint, GetEdgePosition(target, targetPoint));
+    }
 }

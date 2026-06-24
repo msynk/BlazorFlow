@@ -1,0 +1,97 @@
+@page "/floating-edges"
+
+<PageTitle>BlazorFlow - Floating Edges</PageTitle>
+
+<div class="demo-header">
+    <h3>Floating Edges</h3>
+    <p class="text-muted">
+        Uses the new <code>GraphUtils.GetFloatingEdgeParams</code> helper (a port of React Flow's floating-edge
+        math) inside a custom <code>EdgeTemplate</code>. Each edge attaches to the point on a node's border that
+        faces the other node and re-anchors live as you drag. Every node is one big handle, so with
+        <code>ConnectionMode.Loose</code> you can connect from anywhere on a node to anywhere on another.
+    </p>
+</div>
+
+<div class="example-toolbar">
+    <label>edge path:
+        <select @onchange="e => _edgeType = Enum.Parse<EdgeType>(e.Value!.ToString()!)">
+            <option value="Straight">Straight</option>
+            <option value="Bezier" selected>Bezier</option>
+            <option value="SmoothStep">SmoothStep</option>
+        </select>
+    </label>
+</div>
+
+<div class="demo-canvas" style="height: calc(100vh - 250px);">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" ConnectionMode="ConnectionMode.Loose">
+        <NodeTemplate Context="node">
+            <div class="fl-node" style="@($"background:{Color(node)}")">@node.Label</div>
+            <Handle Type="HandleType.Source" Position="Position.Top"
+                    Style="position:absolute;inset:0;width:100%;height:100%;border-radius:50%;background:transparent;border:0;transform:none;" />
+        </NodeTemplate>
+
+        <EdgeTemplate Context="ctx">
+            <BaseEdge Path="@FloatingPath(ctx.Edge)" StrokeWidth="@(ctx.Edge.Selected ? 3 : 1.5)" />
+        </EdgeTemplate>
+
+        <ConnectionLineTemplate Context="c">
+            <path d="@EdgePath.Compute(_edgeType, c.From.X, c.From.Y, c.FromPosition, c.To.X, c.To.Y, c.ToPosition).Path"
+                  fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="6 4" />
+        </ConnectionLineTemplate>
+
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+            <MiniMap NodeColorFunc="Color" />
+        </ChildContent>
+    </FlowCanvas>
+</div>
+
+<style>
+    .fl-node {
+        display:flex; align-items:center; justify-content:center;
+        width:70px; height:70px; border-radius:50%;
+        border:2px solid rgba(0,0,0,0.15); font-weight:700; color:#fff; font-size:13px;
+    }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private EdgeType _edgeType = EdgeType.Bezier;
+
+    private static readonly string[] Palette = ["#6366f1", "#ef4444", "#16a34a", "#f59e0b", "#0ea5e9", "#a855f7"];
+
+    protected override void OnInitialized()
+    {
+        var layout = new (double x, double y)[] { (250, 0), (500, 130), (430, 380), (160, 430), (10, 200), (260, 200) };
+        _nodes = layout.Select((p, i) => new Node
+        {
+            Id = (i + 1).ToString(),
+            Label = $"N{i + 1}",
+            Position = new(p.x, p.y),
+            Width = 70,
+            Height = 70,
+        }).ToList();
+
+        _edges =
+        [
+            new Edge { Id = "e6-1", Source = "6", Target = "1" },
+            new Edge { Id = "e6-2", Source = "6", Target = "2" },
+            new Edge { Id = "e6-3", Source = "6", Target = "3" },
+            new Edge { Id = "e6-4", Source = "6", Target = "4" },
+            new Edge { Id = "e6-5", Source = "6", Target = "5" },
+        ];
+    }
+
+    private string Color(Node n) => Palette[(int.Parse(n.Id) - 1) % Palette.Length];
+
+    private string FloatingPath(Edge edge)
+    {
+        var s = _nodes.FirstOrDefault(n => n.Id == edge.Source);
+        var t = _nodes.FirstOrDefault(n => n.Id == edge.Target);
+        if (s is null || t is null) return string.Empty;
+        var (src, srcPos, tgt, tgtPos) = GraphUtils.GetFloatingEdgeParams(s, t);
+        return EdgePath.Compute(_edgeType, src.X, src.Y, srcPos, tgt.X, tgt.Y, tgtPos).Path;
+    }
+}

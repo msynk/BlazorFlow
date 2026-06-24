@@ -1,0 +1,55 @@
+@page "/examples/provider"
+
+<PageTitle>BlazorFlow - Provider</PageTitle>
+
+<ExampleScaffold Title="Provider"
+                 Summary="A sidebar outside the canvas drives the flow through a shared reference — the Blazor equivalent of wrapping a flow in ReactFlowProvider so sibling components can call the flow API.">
+    <div class="provider">
+        <aside class="provider__sidebar">
+            <h4>Controls</h4>
+            <button class="btn btn-sm btn-primary" @onclick="AddNode">Add node</button>
+            <button class="btn btn-sm" @onclick="@(() => _flow?.FitView())">Fit view</button>
+            <button class="btn btn-sm" @onclick="ConnectLast">Connect last two</button>
+            <p class="text-muted">@_nodes.Count nodes · @_edges.Count edges</p>
+        </aside>
+        <div class="provider__canvas">
+            <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+                <Background Variant="BackgroundVariant.Dots" Gap="16" />
+                <Controls />
+            </FlowCanvas>
+        </div>
+    </div>
+</ExampleScaffold>
+
+<style>
+    .provider { display:flex; height:100%; }
+    .provider__sidebar { width:180px; padding:14px; border-right:1px solid var(--bf-border); background:#fafafa; display:flex; flex-direction:column; gap:8px; }
+    .provider__sidebar h4 { margin:0 0 4px; }
+    .provider__canvas { flex:1; position:relative; }
+</style>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private int _id = 1;
+
+    protected override void OnInitialized()
+    {
+        _nodes = [ new Node { Id = "1", Type = "input", Label = "Node 1", Position = new(120, 40) } ];
+    }
+
+    private void AddNode()
+    {
+        _id++;
+        _flow?.AddNodes(new Node { Id = _id.ToString(), Label = $"Node {_id}", Position = new(Random.Shared.Next(40, 360), Random.Shared.Next(60, 300)) });
+    }
+
+    private void ConnectLast()
+    {
+        if (_nodes.Count < 2) return;
+        var a = _nodes[^2];
+        var b = _nodes[^1];
+        _flow?.AddEdges(new Edge { Id = $"e{a.Id}-{b.Id}", Source = a.Id, Target = b.Id });
+    }
+}

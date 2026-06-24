@@ -1,0 +1,39 @@
+@page "/examples/edges"
+
+<PageTitle>BlazorFlow - Edges</PageTitle>
+
+<ExampleScaffold Title="Edges"
+                 Summary="The built-in edge path types — bezier, straight, step and smooth-step — shown side by side, including animated, labelled and arrow-headed variants.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+    </FlowCanvas>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "b1", Label = "bezier", Position = new(20, 20) },
+            new Node { Id = "b2", Label = "", Position = new(20, 180) },
+            new Node { Id = "s1", Label = "straight", Position = new(220, 20) },
+            new Node { Id = "s2", Label = "", Position = new(220, 180) },
+            new Node { Id = "t1", Label = "step", Position = new(420, 20) },
+            new Node { Id = "t2", Label = "", Position = new(420, 180) },
+            new Node { Id = "ss1", Label = "smoothstep", Position = new(620, 20) },
+            new Node { Id = "ss2", Label = "", Position = new(620, 180) },
+        ];
+
+        _edges =
+        [
+            new Edge { Id = "e-b", Source = "b1", Target = "b2", Type = EdgeType.Bezier, Label = "bezier" },
+            new Edge { Id = "e-s", Source = "s1", Target = "s2", Type = EdgeType.Straight, Label = "straight" },
+            new Edge { Id = "e-t", Source = "t1", Target = "t2", Type = EdgeType.Step, Label = "step", Animated = true },
+            new Edge { Id = "e-ss", Source = "ss1", Target = "ss2", Type = EdgeType.SmoothStep, Label = "smoothstep", MarkerType = MarkerType.ArrowClosed },
+        ];
+    }
+}

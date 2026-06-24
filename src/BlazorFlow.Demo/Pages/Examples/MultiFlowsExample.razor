@@ -1,0 +1,56 @@
+@page "/examples/multi-flows"
+
+<PageTitle>BlazorFlow - Multi Flows</PageTitle>
+
+<ExampleScaffold Title="Multi Flows"
+                 Summary="Two independent FlowCanvas instances on one page, each with its own nodes, edges, viewport and overlays.">
+    <div class="multi">
+        <div class="multi__pane">
+            <FlowCanvas Nodes="_a" Edges="_ea" FitViewOnInit="true">
+                <Background Variant="BackgroundVariant.Dots" Gap="16" Color="#c7d2fe" />
+                <Controls />
+                <Panel Position="top-left"><strong>Flow A</strong></Panel>
+            </FlowCanvas>
+        </div>
+        <div class="multi__pane">
+            <FlowCanvas Nodes="_b" Edges="_eb" FitViewOnInit="true">
+                <Background Variant="BackgroundVariant.Lines" Gap="20" Color="#bbf7d0" />
+                <Controls />
+                <Panel Position="top-left"><strong>Flow B</strong></Panel>
+            </FlowCanvas>
+        </div>
+    </div>
+</ExampleScaffold>
+
+<style>
+    .multi { display:flex; height:100%; }
+    .multi__pane { flex:1; position:relative; border-right:1px solid var(--bf-border); }
+    .multi__pane:last-child { border-right:0; }
+</style>
+
+@code {
+    private List<Node> _a = [], _b = [];
+    private List<Edge> _ea = [], _eb = [];
+
+    protected override void OnInitialized()
+    {
+        _a =
+        [
+            new Node { Id = "a1", Type = "input", Label = "A · 1", Position = new(80, 40) },
+            new Node { Id = "a2", Type = "output", Label = "A · 2", Position = new(80, 180) },
+        ];
+        _ea = [ new Edge { Id = "ea", Source = "a1", Target = "a2", Animated = true } ];
+
+        _b =
+        [
+            new Node { Id = "b1", Type = "input", Label = "B · 1", Position = new(80, 40) },
+            new Node { Id = "b2", Label = "B · 2", Position = new(60, 160) },
+            new Node { Id = "b3", Type = "output", Label = "B · 3", Position = new(200, 160) },
+        ];
+        _eb =
+        [
+            new Edge { Id = "eb1", Source = "b1", Target = "b2" },
+            new Edge { Id = "eb2", Source = "b1", Target = "b3" },
+        ];
+    }
+}

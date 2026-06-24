@@ -1,0 +1,35 @@
+@page "/examples/zindex-mode"
+
+<PageTitle>BlazorFlow - Z-Index Mode</PageTitle>
+
+<ExampleScaffold Title="Z-Index Mode"
+                 Summary="Control node stacking with the ZIndex property. Toggle which overlapping node sits on top.">
+    <Toolbar>
+        <button class="btn btn-sm" @onclick="BringRed">Bring red to front</button>
+        <button class="btn btn-sm" @onclick="BringBlue">Bring blue to front</button>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private Node _red = default!;
+    private Node _blue = default!;
+
+    protected override void OnInitialized()
+    {
+        _red = new Node { Id = "red", Label = "Red (z=1)", Position = new(160, 120), Width = 140, Height = 90, ZIndex = 1, Style = "background:#fee2e2;border-color:#ef4444;" };
+        _blue = new Node { Id = "blue", Label = "Blue (z=2)", Position = new(230, 170), Width = 140, Height = 90, ZIndex = 2, Style = "background:#dbeafe;border-color:#3b82f6;" };
+        _nodes = [ _red, _blue ];
+        _edges = [];
+    }
+
+    private void BringRed() { _red.ZIndex = 2; _blue.ZIndex = 1; }
+    private void BringBlue() { _blue.ZIndex = 2; _red.ZIndex = 1; }
+}

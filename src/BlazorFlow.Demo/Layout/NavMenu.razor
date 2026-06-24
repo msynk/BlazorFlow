@@ -1,3 +1,6 @@
+@inject NavigationManager Nav
+@implements IDisposable
+
 <div class="nav-top">
     <a class="brand" href="">
         <span class="brand-mark">@((MarkupString)LogoSvg)</span>
@@ -8,37 +11,85 @@
     </button>
 </div>
 
-<nav class="@NavMenuCssClass" @onclick="CollapseNavMenu">
-    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+<nav class="@NavMenuCssClass">
+    <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CollapseNavMenu">
         <span class="nav-icon">●</span> Basic Flow
     </NavLink>
-    <NavLink class="nav-link" href="custom-nodes">
+    <NavLink class="nav-link" href="custom-nodes" @onclick="CollapseNavMenu">
         <span class="nav-icon">◆</span> Custom Nodes
     </NavLink>
-    <NavLink class="nav-link" href="edge-types">
+    <NavLink class="nav-link" href="edge-types" @onclick="CollapseNavMenu">
         <span class="nav-icon">↳</span> Edge Types
     </NavLink>
-    <NavLink class="nav-link" href="custom-edges">
+    <NavLink class="nav-link" href="custom-edges" @onclick="CollapseNavMenu">
         <span class="nav-icon">⤳</span> Custom Edges
     </NavLink>
-    <NavLink class="nav-link" href="interactions">
+    <NavLink class="nav-link" href="interactions" @onclick="CollapseNavMenu">
         <span class="nav-icon">⊹</span> Interactions
     </NavLink>
-    <NavLink class="nav-link" href="labels-handles">
+    <NavLink class="nav-link" href="labels-handles" @onclick="CollapseNavMenu">
         <span class="nav-icon">⛶</span> Labels &amp; Handles
     </NavLink>
-    <NavLink class="nav-link" href="extras">
+    <NavLink class="nav-link" href="extras" @onclick="CollapseNavMenu">
         <span class="nav-icon">✦</span> Theming &amp; Extras
     </NavLink>
-    <NavLink class="nav-link" href="advanced">
+    <NavLink class="nav-link" href="advanced" @onclick="CollapseNavMenu">
         <span class="nav-icon">▣</span> Groups &amp; Resizing
     </NavLink>
+
+    <div class="nav-grouplabel">New Features</div>
+    <NavLink class="nav-link" href="connection-line" @onclick="CollapseNavMenu">
+        <span class="nav-icon">⤿</span> Connection Lines
+    </NavLink>
+    <NavLink class="nav-link" href="add-node-on-drop" @onclick="CollapseNavMenu">
+        <span class="nav-icon">＋</span> Add Node on Drop
+    </NavLink>
+    <NavLink class="nav-link" href="floating-edges" @onclick="CollapseNavMenu">
+        <span class="nav-icon">◌</span> Floating Edges
+    </NavLink>
+    <NavLink class="nav-link" href="minimap" @onclick="CollapseNavMenu">
+        <span class="nav-icon">▦</span> MiniMap
+    </NavLink>
+    <NavLink class="nav-link" href="drag-threshold" @onclick="CollapseNavMenu">
+        <span class="nav-icon">⇆</span> Drag Threshold
+    </NavLink>
+
+    <div class="nav-section">
+        <div class="nav-parent">
+            <NavLink class="nav-link nav-link--accent" href="examples" Match="NavLinkMatch.All" @onclick="CollapseNavMenu">
+                <span class="nav-icon">✺</span> Examples
+            </NavLink>
+            <button class="nav-expand" title="Toggle examples" @onclick="ToggleExamples">
+                <span class="@(ExamplesOpen ? "nav-caret open" : "nav-caret")">▸</span>
+            </button>
+        </div>
+
+        @if (ExamplesOpen)
+        {
+            <div class="nav-submenu">
+                @foreach (var group in ExampleCatalog.Grouped())
+                {
+                    <div class="nav-subgroup">@group.Key</div>
+                    @foreach (var ex in group)
+                    {
+                        <NavLink class="nav-link nav-sublink" href="@($"examples/{ex.Route}")" @onclick="CollapseNavMenu">
+                            @ex.Title
+                        </NavLink>
+                    }
+                }
+            </div>
+        }
+    </div>
 </nav>
 
 @code {
     private bool collapseNavMenu = true;
+    private bool? _examplesOpenOverride;
 
     private string? NavMenuCssClass => collapseNavMenu ? "nav-menu collapse" : "nav-menu";
+
+    // Open the submenu automatically when viewing an example, unless the user toggled it.
+    private bool ExamplesOpen => _examplesOpenOverride ?? IsOnExamplesRoute();
 
     private const string LogoSvg =
         "<svg width='22' height='22' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>" +
@@ -49,7 +100,22 @@
         "<path d='M9 5.5h9' stroke='#e0e7ff' stroke-width='1.5'/>" +
         "</svg>";
 
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => StateHasChanged();
+
+    private bool IsOnExamplesRoute()
+    {
+        var rel = Nav.ToBaseRelativePath(Nav.Uri);
+        return rel.StartsWith("examples", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
 
     private void CollapseNavMenu() => collapseNavMenu = true;
+
+    private void ToggleExamples() => _examplesOpenOverride = !ExamplesOpen;
 }

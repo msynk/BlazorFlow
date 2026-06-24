@@ -49,8 +49,15 @@
 
                 @if (_connecting)
                 {
-                    <path class="blazorflow__connectionline" d="@ConnectionLinePath()"
-                          fill="none" stroke="var(--bf-connection-stroke)" stroke-width="1.5" />
+                    @if (ConnectionLineTemplate is not null)
+                    {
+                        @ConnectionLineTemplate(BuildConnectionLineContext())
+                    }
+                    else
+                    {
+                        <path class="blazorflow__connectionline" d="@ConnectionLinePath()"
+                              fill="none" stroke="var(--bf-connection-stroke)" stroke-width="1.5" />
+                    }
                 }
 
                 @if (ElementsSelectable && EdgesReconnectable)

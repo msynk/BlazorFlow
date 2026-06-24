@@ -5,16 +5,29 @@
      @onpointerdown="OnPointerDown"
      @onpointermove="OnPointerMove"
      @onpointerup="OnPointerUp"
-     @onpointerleave="OnPointerUp">
+     @onpointerleave="OnPointerUp"
+     @onwheel="OnWheel"
+     @onwheel:preventDefault="Zoomable">
     @foreach (var node in Flow.CurrentNodes)
     {
         if (node.Hidden) continue;
         var r = node.GetRect();
-        <rect class="blazorflow__minimap-node @(node.Selected ? "selected" : null)"
-              x="@Inv(r.X)" y="@Inv(r.Y)"
-              width="@Inv(r.Width)" height="@Inv(r.Height)"
-              rx="2"
-              fill="@NodeColor" />
+        @if (NodeTemplate is not null)
+        {
+            <g transform="@($"translate({Inv(r.X)},{Inv(r.Y)})")">
+                @NodeTemplate(node)
+            </g>
+        }
+        else
+        {
+            <rect class="blazorflow__minimap-node @(node.Selected ? "selected" : null) @NodeClassFunc?.Invoke(node)"
+                  x="@Inv(r.X)" y="@Inv(r.Y)"
+                  width="@Inv(r.Width)" height="@Inv(r.Height)"
+                  rx="@Inv(BorderRadius)"
+                  fill="@(NodeColorFunc?.Invoke(node) ?? NodeColor)"
+                  stroke="@(NodeStrokeColorFunc?.Invoke(node) ?? NodeStrokeColor)"
+                  stroke-width="@Inv(NodeStrokeWidth)" />
+        }
     }
     <path class="blazorflow__minimap-mask"
           d="@MaskPath"
@@ -30,8 +43,32 @@
     [Parameter] public string NodeColor { get; set; } = "#e2e2e2";
     [Parameter] public string MaskColor { get; set; } = "rgba(120,120,120,0.25)";
 
+    /// <summary>Default node outline color.</summary>
+    [Parameter] public string NodeStrokeColor { get; set; } = "transparent";
+
+    /// <summary>Default node outline width (in flow units).</summary>
+    [Parameter] public double NodeStrokeWidth { get; set; } = 2;
+
+    /// <summary>Corner radius of the default node rectangles.</summary>
+    [Parameter] public double BorderRadius { get; set; } = 2;
+
+    /// <summary>Per-node fill color. Overrides <see cref="NodeColor"/> when provided.</summary>
+    [Parameter] public Func<Node, string>? NodeColorFunc { get; set; }
+
+    /// <summary>Per-node outline color. Overrides <see cref="NodeStrokeColor"/> when provided.</summary>
+    [Parameter] public Func<Node, string>? NodeStrokeColorFunc { get; set; }
+
+    /// <summary>Per-node extra CSS class for the minimap rectangle.</summary>
+    [Parameter] public Func<Node, string?>? NodeClassFunc { get; set; }
+
+    /// <summary>Optional SVG template for each minimap node, rendered translated to the node origin.</summary>
+    [Parameter] public RenderFragment<Node>? NodeTemplate { get; set; }
+
     /// <summary>When true, clicking or dragging on the minimap pans the main viewport.</summary>
     [Parameter] public bool Pannable { get; set; } = true;
+
+    /// <summary>When true, scrolling over the minimap zooms the main viewport.</summary>
+    [Parameter] public bool Zoomable { get; set; }
 
     private Rect _bounds;
     private bool _panning;
@@ -109,6 +146,14 @@
     }
 
     private void OnPointerUp(PointerEventArgs e) => _panning = false;
+
+    private void OnWheel(WheelEventArgs e)
+    {
+        if (!Zoomable) return;
+        var vp = Flow.Viewport;
+        var factor = e.DeltaY < 0 ? 1.15 : 1 / 1.15;
+        Flow.SetViewport(vp with { Zoom = vp.Zoom * factor });
+    }
 
     /// <summary>Centers the main viewport on the flow point under the given minimap-local pixel.</summary>
     private void PanTo(double offsetX, double offsetY)

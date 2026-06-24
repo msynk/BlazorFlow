@@ -1,0 +1,50 @@
+@page "/examples/hidden"
+
+<PageTitle>BlazorFlow - Hidden</PageTitle>
+
+<ExampleScaffold Title="Hidden"
+                 Summary="Toggle the Hidden flag on nodes and edges. Hidden elements are removed from rendering and layout but kept in state.">
+    <Toolbar>
+        <label><input type="checkbox" checked="@_hidden" @onchange="Toggle" /> hidden</label>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private bool _hidden;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Node 1", Position = new(250, 5) },
+            new Node { Id = "2", Label = "Node 2", Position = new(100, 100) },
+            new Node { Id = "3", Label = "Node 3", Position = new(400, 100) },
+            new Node { Id = "4", Type = "output", Label = "Node 4", Position = new(250, 200) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2" },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4" },
+            new Edge { Id = "e3-4", Source = "3", Target = "4" },
+        ];
+    }
+
+    private void Toggle(ChangeEventArgs e)
+    {
+        _hidden = (bool)e.Value!;
+        // Hide nodes 2 and 3 (and edges follow via their connected nodes being hidden).
+        foreach (var n in _nodes.Where(n => n.Id is "2" or "3")) n.Hidden = _hidden;
+        foreach (var ed in _edges) ed.Hidden = _hidden && ed.Id is "e1-2" or "e1-3" or "e2-4" or "e3-4";
+        _flow?.Refresh(remeasure: true);
+    }
+}

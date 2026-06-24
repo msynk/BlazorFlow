@@ -1,0 +1,47 @@
+@page "/examples/backgrounds"
+
+<PageTitle>BlazorFlow - Backgrounds</PageTitle>
+
+<ExampleScaffold Title="Backgrounds"
+                 Summary="The Background component supports dots, lines and cross patterns. Adjust the variant, gap and color, or stack two backgrounds for a grid-with-dots effect.">
+    <Toolbar>
+        <label>variant:
+            <select @onchange="e => _variant = Enum.Parse<BackgroundVariant>(e.Value!.ToString()!)">
+                @foreach (var v in Enum.GetValues<BackgroundVariant>())
+                {
+                    <option value="@v">@v</option>
+                }
+            </select>
+        </label>
+        <label>gap: <input type="range" min="8" max="48" value="@_gap" @oninput="e => _gap = double.Parse(e.Value!.ToString()!)" /> @_gap</label>
+        <label><input type="checkbox" checked="@_stacked" @onchange="e => _stacked = (bool)e.Value!" /> stacked grid</label>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            @if (_stacked)
+            {
+                <Background Variant="BackgroundVariant.Lines" Gap="_gap * 4" Color="#e5e7eb" />
+            }
+            <Background Variant="_variant" Gap="_gap" Color="#9ca3af" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private BackgroundVariant _variant = BackgroundVariant.Dots;
+    private double _gap = 20;
+    private bool _stacked;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "Node 1", Position = new(120, 60) },
+            new Node { Id = "2", Type = "output", Label = "Node 2", Position = new(320, 180) },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2" } ];
+    }
+}

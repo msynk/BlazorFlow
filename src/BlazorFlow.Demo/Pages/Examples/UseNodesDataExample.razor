@@ -1,0 +1,78 @@
+@page "/examples/use-nodes-data"
+
+<PageTitle>BlazorFlow - Use Nodes Data</PageTitle>
+
+<ExampleScaffold Title="Use Nodes Data"
+                 Summary="A node reads another node's data. The 'source' node holds a number; the connected 'result' nodes derive their display from it, recomputing whenever the source changes.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <NodeTemplate Context="node">
+            @if (node.Type == "source" && node.Data is Counter c)
+            {
+                <div class="data-node">
+                    <strong>Source</strong>
+                    <input type="range" min="0" max="100" value="@c.Value" class="nodrag"
+                           @oninput="e => SetValue(c, e.Value?.ToString())" @onpointerdown:stopPropagation="true" />
+                    <span>@c.Value</span>
+                </div>
+                <Handle Type="HandleType.Source" Position="Position.Bottom" />
+            }
+            else if (node.Type == "result")
+            {
+                <Handle Type="HandleType.Target" Position="Position.Top" />
+                <div class="data-node">
+                    <strong>@node.Label</strong>
+                    <span class="data-node__value">@node.Data</span>
+                </div>
+            }
+            else
+            {
+                <BlazorFlow.Internal.DefaultNode Node="node" />
+            }
+        </NodeTemplate>
+        <ChildContent>
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </ChildContent>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .data-node { display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 8px; }
+    .data-node__value { font-size:18px; font-weight:700; color:#6366f1; }
+</style>
+
+@code {
+    public sealed class Counter { public int Value { get; set; } = 25; }
+
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private readonly Counter _counter = new();
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "src", Type = "source", Position = new(220, 20), Data = _counter, Width = 160 },
+            new Node { Id = "double", Type = "result", Label = "× 2", Position = new(80, 200) },
+            new Node { Id = "square", Type = "result", Label = "squared", Position = new(360, 200) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1", Source = "src", Target = "double", Animated = true },
+            new Edge { Id = "e2", Source = "src", Target = "square", Animated = true },
+        ];
+        Recompute();
+    }
+
+    private void SetValue(Counter c, string? value)
+    {
+        c.Value = int.TryParse(value, out var v) ? v : 0;
+        Recompute();
+    }
+
+    private void Recompute()
+    {
+        _nodes.First(n => n.Id == "double").Data = _counter.Value * 2;
+        _nodes.First(n => n.Id == "square").Data = _counter.Value * _counter.Value;
+    }
+}

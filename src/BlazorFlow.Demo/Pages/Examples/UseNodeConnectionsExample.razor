@@ -1,0 +1,65 @@
+@page "/examples/use-node-connections"
+
+<PageTitle>BlazorFlow - Use Node Connections</PageTitle>
+
+<ExampleScaffold Title="Use Node Connections"
+                 Summary="Click a node to list the edges connected to it, along with its incoming and outgoing neighbours, computed with GraphUtils.">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" OnNodeClick="Select">
+        <Background Variant="BackgroundVariant.Dots" Gap="16" />
+        <Controls />
+        <Panel Position="top-right">
+            <div class="conn-panel">
+                @if (_selected is null)
+                {
+                    <span class="text-muted">click a node</span>
+                }
+                else
+                {
+                    <div><strong>Node @_selected.Id</strong></div>
+                    <div>connected edges: @_connected.Count</div>
+                    <div>incomers: @string.Join(", ", _incomers.Select(n => n.Id))</div>
+                    <div>outgoers: @string.Join(", ", _outgoers.Select(n => n.Id))</div>
+                }
+            </div>
+        </Panel>
+    </FlowCanvas>
+</ExampleScaffold>
+
+<style>
+    .conn-panel { background:#fff; border:1px solid var(--bf-border); border-radius:8px; padding:8px 10px; font-size:12px; min-width:180px; box-shadow:var(--bf-shadow); }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private Node? _selected;
+    private List<Edge> _connected = [];
+    private List<Node> _incomers = [];
+    private List<Node> _outgoers = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input", Label = "1", Position = new(250, 20) },
+            new Node { Id = "2", Label = "2", Position = new(120, 140) },
+            new Node { Id = "3", Label = "3", Position = new(380, 140) },
+            new Node { Id = "4", Type = "output", Label = "4", Position = new(250, 280) },
+        ];
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2" },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4" },
+            new Edge { Id = "e3-4", Source = "3", Target = "4" },
+        ];
+    }
+
+    private void Select(Node node)
+    {
+        _selected = node;
+        _connected = GraphUtils.GetConnectedEdges([node], _edges);
+        _incomers = GraphUtils.GetIncomers(node, _nodes, _edges);
+        _outgoers = GraphUtils.GetOutgoers(node, _nodes, _edges);
+    }
+}

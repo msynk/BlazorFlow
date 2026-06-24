@@ -1,0 +1,58 @@
+@page "/examples/update-node"
+
+<PageTitle>BlazorFlow - Update Node</PageTitle>
+
+<ExampleScaffold Title="Update Node"
+                 Summary="Update a node's label, color and position imperatively from outside the canvas, mirroring React Flow's updateNode example.">
+    <Toolbar>
+        <label>label: <input value="@_label" @oninput="e => SetLabel(e.Value?.ToString())" /></label>
+        <label>bg:
+            <select @onchange="e => SetColor(e.Value?.ToString())">
+                <option value="#ffffff">white</option>
+                <option value="#dbeafe">blue</option>
+                <option value="#dcfce7">green</option>
+                <option value="#fee2e2">red</option>
+            </select>
+        </label>
+        <button class="btn btn-sm" @onclick="MoveRandom">Move randomly</button>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <Background Variant="BackgroundVariant.Dots" Gap="16" />
+            <Controls />
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private Node _target = default!;
+    private string _label = "Node";
+
+    protected override void OnInitialized()
+    {
+        _target = new Node { Id = "1", Label = _label, Position = new(250, 120), Style = "background:#ffffff;" };
+        _nodes =
+        [
+            _target,
+            new Node { Id = "2", Type = "output", Label = "Output", Position = new(250, 260) },
+        ];
+        _edges = [ new Edge { Id = "e1-2", Source = "1", Target = "2", Animated = true } ];
+    }
+
+    private void SetLabel(string? value)
+    {
+        _label = value ?? "";
+        _target.Label = _label;
+    }
+
+    private void SetColor(string? color) => _target.Style = $"background:{color};";
+
+    private void MoveRandom()
+    {
+        _target.Position = new(Random.Shared.Next(20, 450), Random.Shared.Next(20, 250));
+        _flow?.Refresh(remeasure: true);
+    }
+}

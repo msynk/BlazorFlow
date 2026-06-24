@@ -1,0 +1,61 @@
+@page "/examples/layouting"
+
+<PageTitle>BlazorFlow - Layouting</PageTitle>
+
+<ExampleScaffold Title="Layouting"
+                 Summary="Automatically arrange the graph with a simple layered layout (standing in for dagre/elk). Choose top-to-bottom or left-to-right and the nodes and handles reposition.">
+    <Toolbar>
+        <button class="btn btn-sm btn-primary" @onclick="@(() => Relayout("TB"))">Vertical layout</button>
+        <button class="btn btn-sm btn-primary" @onclick="@(() => Relayout("LR"))">Horizontal layout</button>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <NodeTemplate Context="node">
+                <Handle Type="HandleType.Target" Position="@(_direction == "LR" ? Position.Left : Position.Top)" />
+                <div class="lay-node">@node.Label</div>
+                <Handle Type="HandleType.Source" Position="@(_direction == "LR" ? Position.Right : Position.Bottom)" />
+            </NodeTemplate>
+            <ChildContent>
+                <Background Variant="BackgroundVariant.Dots" Gap="16" />
+                <Controls />
+                <MiniMap />
+            </ChildContent>
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+<style>
+    .lay-node { padding: 8px 14px; font-weight: 600; }
+</style>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private string _direction = "TB";
+
+    protected override void OnInitialized()
+    {
+        _nodes = Enumerable.Range(1, 7)
+            .Select(i => new Node { Id = i.ToString(), Label = $"Node {i}", Position = new(0, 0), Width = 120 })
+            .ToList();
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e1-3", Source = "1", Target = "3", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e2-4", Source = "2", Target = "4", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e2-5", Source = "2", Target = "5", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e3-6", Source = "3", Target = "6", Type = EdgeType.SmoothStep },
+            new Edge { Id = "e3-7", Source = "3", Target = "7", Type = EdgeType.SmoothStep },
+        ];
+        Relayout("TB");
+    }
+
+    private void Relayout(string direction)
+    {
+        _direction = direction;
+        LayoutHelper.Layout(_nodes, _edges, direction);
+        _flow?.Refresh(remeasure: true);
+        _flow?.FitView();
+    }
+}

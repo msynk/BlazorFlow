@@ -1,0 +1,36 @@
+@page "/examples/default-nodes"
+
+<PageTitle>BlazorFlow - Default Nodes</PageTitle>
+
+<ExampleScaffold Title="Default Nodes"
+                 Summary="The three built-in node types: an input node (source handle only), a default node (both) and an output node (target handle only).">
+    <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+        <Background Variant="BackgroundVariant.Lines" Gap="24" Color="#eee" />
+        <Controls />
+        <MiniMap />
+    </FlowCanvas>
+</ExampleScaffold>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Type = "input",   Label = "Input Node",   Position = new(250, 25) },
+            new Node { Id = "2", Type = "default", Label = "Default Node", Position = new(150, 125) },
+            new Node { Id = "3", Type = "default", Label = "Default Node", Position = new(350, 125) },
+            new Node { Id = "4", Type = "output",  Label = "Output Node",  Position = new(250, 250) },
+        ];
+
+        _edges =
+        [
+            new Edge { Id = "e1-2", Source = "1", Target = "2", Animated = true },
+            new Edge { Id = "e1-3", Source = "1", Target = "3" },
+            new Edge { Id = "e2-4", Source = "2", Target = "4" },
+            new Edge { Id = "e3-4", Source = "3", Target = "4" },
+        ];
+    }
+}

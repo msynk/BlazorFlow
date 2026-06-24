@@ -1,0 +1,50 @@
+@page "/examples/connection-mode"
+
+<PageTitle>BlazorFlow - Connection Mode</PageTitle>
+
+<ExampleScaffold Title="Connection Mode"
+                 Summary="Strict mode only allows source→target connections. Loose mode lets any handle connect to any other handle. Toggle the mode and try connecting handles of the same type.">
+    <Toolbar>
+        <label>mode:
+            <select @onchange="e => _mode = Enum.Parse<ConnectionMode>(e.Value!.ToString()!)">
+                <option value="Strict">Strict</option>
+                <option value="Loose">Loose</option>
+            </select>
+        </label>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas Nodes="_nodes" Edges="_edges" FitViewOnInit="true" ConnectionMode="_mode">
+            <NodeTemplate Context="node">
+                <Handle Type="HandleType.Target" Position="Position.Left" Id="t" />
+                <div class="vnode">@node.Label</div>
+                <Handle Type="HandleType.Source" Position="Position.Right" Id="s" />
+            </NodeTemplate>
+            <ChildContent>
+                <Background Variant="BackgroundVariant.Dots" Gap="16" />
+                <Controls />
+            </ChildContent>
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+<style>
+    .vnode { padding: 6px 14px; font-weight: 600; }
+</style>
+
+@code {
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private ConnectionMode _mode = ConnectionMode.Strict;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "1", Label = "Node 1", Position = new(80, 60) },
+            new Node { Id = "2", Label = "Node 2", Position = new(340, 60) },
+            new Node { Id = "3", Label = "Node 3", Position = new(80, 200) },
+            new Node { Id = "4", Label = "Node 4", Position = new(340, 200) },
+        ];
+        _edges = [];
+    }
+}

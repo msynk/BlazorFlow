@@ -1,0 +1,72 @@
+@page "/examples/use-update-node-internals"
+
+<PageTitle>BlazorFlow - Update Node Internals</PageTitle>
+
+<ExampleScaffold Title="Update Node Internals"
+                 Summary="When a node's handles change side or count, the canvas must re-measure so edges stay attached. Flip the handle side and the connected edge re-anchors after the internals update.">
+    <Toolbar>
+        <button class="btn btn-sm btn-primary" @onclick="FlipSide">Flip handle side (@_side)</button>
+        <button class="btn btn-sm" @onclick="AddHandle">Add handle</button>
+    </Toolbar>
+    <ChildContent>
+        <FlowCanvas @ref="_flow" Nodes="_nodes" Edges="_edges" FitViewOnInit="true">
+            <NodeTemplate Context="node">
+                @if (node.Id == "dyn")
+                {
+                    <Handle Type="HandleType.Target" Position="Position.Top" />
+                    <div class="uni-node">@node.Label</div>
+                    @for (var i = 0; i < _handles; i++)
+                    {
+                        var top = (i + 1) * 100.0 / (_handles + 1);
+                        <Handle Type="HandleType.Source" Position="_side" Id="@($"s{i}")"
+                                Style="@(_side is Position.Left or Position.Right ? $"top:{top}%" : $"left:{top}%")" />
+                    }
+                }
+                else
+                {
+                    <Handle Type="HandleType.Target" Position="Position.Top" />
+                    <div class="uni-node">@node.Label</div>
+                }
+            </NodeTemplate>
+            <ChildContent>
+                <Background Variant="BackgroundVariant.Dots" Gap="16" />
+                <Controls />
+            </ChildContent>
+        </FlowCanvas>
+    </ChildContent>
+</ExampleScaffold>
+
+<style>
+    .uni-node { padding:12px 18px; font-weight:600; }
+</style>
+
+@code {
+    private FlowCanvas? _flow;
+    private List<Node> _nodes = [];
+    private List<Edge> _edges = [];
+    private Position _side = Position.Right;
+    private int _handles = 1;
+
+    protected override void OnInitialized()
+    {
+        _nodes =
+        [
+            new Node { Id = "dyn", Label = "Dynamic", Position = new(80, 120), Height = 80 },
+            new Node { Id = "t0", Label = "Target", Position = new(360, 120) },
+        ];
+        _edges = [ new Edge { Id = "e0", Source = "dyn", SourceHandle = "s0", Target = "t0" } ];
+    }
+
+    private void FlipSide()
+    {
+        _side = _side == Position.Right ? Position.Bottom : Position.Right;
+        // Changing handle geometry requires re-measuring node internals.
+        _flow?.Refresh(remeasure: true);
+    }
+
+    private void AddHandle()
+    {
+        _handles++;
+        _flow?.Refresh(remeasure: true);
+    }
+}
