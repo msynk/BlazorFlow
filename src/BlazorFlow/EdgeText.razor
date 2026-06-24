@@ -1,0 +1,20 @@
+@namespace BlazorFlow
+
+@* Renders an edge label (text on a rounded background) at a point in flow space.
+   Intended for use inside an EdgeTemplate / BaseEdge. *@
+
+<g transform="@Transform" class="blazorflow__edge-text @Class">
+    <rect class="blazorflow__edge-label-bg" x="@Inv(-HalfW)" y="-10" width="@Inv(HalfW * 2)" height="20" rx="3" />
+    <text class="blazorflow__edge-label" x="0" y="0" dominant-baseline="central" text-anchor="middle">@Label</text>
+</g>
+
+@code {
+    [Parameter] public double X { get; set; }
+    [Parameter] public double Y { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private double HalfW => Math.Max(12, (Label?.Length ?? 0) * 4.0 + 6);
+    private string Transform => string.Create(CultureInfo.InvariantCulture, $"translate({X},{Y})");
+    private static string Inv(double v) => v.ToString(CultureInfo.InvariantCulture);
+}

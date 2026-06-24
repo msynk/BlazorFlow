@@ -103,9 +103,14 @@ public static class EdgePath
         var sourceGap = new XYPosition(source.X + sdx * offset, source.Y + sdy * offset);
         var targetGap = new XYPosition(target.X + tdx * offset, target.Y + tdy * offset);
 
-        // Determine primary travel axis.
-        bool horizontal = sourcePos is Position.Left or Position.Right;
-        var dirAccessorX = (sourcePos is Position.Left or Position.Right);
+        // Primary travel axis is determined by the actual direction between the
+        // gapped endpoints (React Flow's getDirection). For Left/Right handles the
+        // edge travels along X, for Top/Bottom along Y. currDir is the sign of that
+        // travel (+1 toward larger coordinate, -1 toward smaller).
+        bool dirAccessorX = sourcePos is Position.Left or Position.Right;
+        double currDir = dirAccessorX
+            ? (sourceGap.X < targetGap.X ? 1 : -1)
+            : (sourceGap.Y < targetGap.Y ? 1 : -1);
 
         var centerX = (sourceGap.X + targetGap.X) / 2;
         var centerY = (sourceGap.Y + targetGap.Y) / 2;
@@ -119,7 +124,7 @@ public static class EdgePath
 
         if (sAcc * tAcc == -1)
         {
-            // Handles face opposite directions on the travel axis: split in the middle.
+            // Handles face opposite directions on the travel axis.
             var verticalSplit = new[]
             {
                 new XYPosition(centerX, sourceGap.Y),
@@ -130,14 +135,24 @@ public static class EdgePath
                 new XYPosition(sourceGap.X, centerY),
                 new XYPosition(targetGap.X, centerY),
             };
-            inner.AddRange(dirAccessorX ? verticalSplit : horizontalSplit);
+
+            // Choose the split orientation based on whether the handle points the
+            // same way as the actual travel direction.
+            if (sAcc == currDir)
+                inner.AddRange(dirAccessorX ? verticalSplit : horizontalSplit);
+            else
+                inner.AddRange(dirAccessorX ? horizontalSplit : verticalSplit);
         }
         else
         {
             // Same / perpendicular directions: single corner.
             var sourceTarget = new XYPosition(sourceGap.X, targetGap.Y);
             var targetSource = new XYPosition(targetGap.X, sourceGap.Y);
-            inner.Add(dirAccessorX ? targetSource : sourceTarget);
+
+            if (dirAccessorX)
+                inner.Add(sAcc == currDir ? targetSource : sourceTarget);
+            else
+                inner.Add(sAcc == currDir ? sourceTarget : targetSource);
         }
 
         var points = new List<XYPosition> { source, sourceGap };

@@ -60,6 +60,15 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     [Parameter] public Func<Connection, bool>? IsValidConnection { get; set; }
     [Parameter] public EventCallback<List<Node>> NodesChanged { get; set; }
     [Parameter] public EventCallback<List<Edge>> EdgesChanged { get; set; }
+
+    /// <summary>Raised with the nodes that were just deleted.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<Node>> OnNodesDelete { get; set; }
+
+    /// <summary>Raised with the edges that were just deleted.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<Edge>> OnEdgesDelete { get; set; }
+
+    /// <summary>Raised after any deletion with the removed nodes and edges.</summary>
+    [Parameter] public EventCallback<SelectionChange> OnDelete { get; set; }
     [Parameter] public EventCallback<Node> OnNodeClick { get; set; }
     [Parameter] public EventCallback<Edge> OnEdgeClick { get; set; }
     [Parameter] public EventCallback<Viewport> OnViewportChanged { get; set; }
@@ -109,6 +118,42 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     /// <summary>Which modifier key adds to the current selection (multi-select). Defaults to Shift.</summary>
     [Parameter] public ModifierKey MultiSelectionKey { get; set; } = ModifierKey.Shift;
     [Parameter] public EdgeType DefaultEdgeType { get; set; } = EdgeType.Bezier;
+
+    /// <summary>Default values applied to edges created by user interaction.</summary>
+    [Parameter] public DefaultEdgeOptions? DefaultEdgeOptions { get; set; }
+
+    /// <summary>Controls which handle pairings are valid when connecting (Strict vs Loose).</summary>
+    [Parameter] public ConnectionMode ConnectionMode { get; set; } = ConnectionMode.Strict;
+
+    /// <summary>Path style used for the in-progress connection line while dragging.</summary>
+    [Parameter] public EdgeType ConnectionLineType { get; set; } = EdgeType.Bezier;
+
+    /// <summary>Color theme applied to the flow.</summary>
+    [Parameter] public ColorMode ColorMode { get; set; } = ColorMode.Light;
+
+    /// <summary>
+    /// Default origin (0,0 = top-left, 0.5,0.5 = center) defining which point of a node its
+    /// Position refers to. Individual nodes can override via <c>Node.Origin</c>.
+    /// </summary>
+    [Parameter] public XYPosition NodeOrigin { get; set; } = new(0, 0);
+
+    /// <summary>How box selection decides membership: Partial (any overlap) or Full (fully enclosed).</summary>
+    [Parameter] public SelectionMode SelectionMode { get; set; } = SelectionMode.Partial;
+
+    /// <summary>Restricts pan-on-scroll to a single axis when set.</summary>
+    [Parameter] public PanOnScrollMode PanOnScrollMode { get; set; } = PanOnScrollMode.Free;
+
+    /// <summary>Hides the small "BlazorFlow" attribution badge when true.</summary>
+    [Parameter] public bool HideAttribution { get; set; }
+
+    /// <summary>Raised once after the flow is first rendered and measured; receives the canvas for imperative use.</summary>
+    [Parameter] public EventCallback<FlowCanvas> OnInit { get; set; }
+
+    /// <summary>
+    /// Optional veto for deletions. Receives the nodes and edges about to be deleted;
+    /// return false to cancel the deletion. Mirrors React Flow's <c>onBeforeDelete</c>.
+    /// </summary>
+    [Parameter] public Func<IReadOnlyList<Node>, IReadOnlyList<Edge>, bool>? OnBeforeDelete { get; set; }
     [Parameter] public bool FitViewOnInit { get; set; }
 
     /// <summary>
@@ -176,6 +221,9 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     private bool _selAdditive;
     private readonly HashSet<string> _preSelected = [];
 
+    // viewport portals (ViewportPortal component content)
+    private readonly Dictionary<object, RenderFragment> _viewportPortals = [];
+
     // node drag
     private bool _draggingNodes;
     private Node? _dragPrimary;
@@ -234,6 +282,9 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
             if (changed)
                 StateHasChanged();
         }
+
+        if (firstRender && OnInit.HasDelegate)
+            await OnInit.InvokeAsync(this);
     }
 
     private async Task RefreshPaneRectAsync()
@@ -322,12 +373,24 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         return RectsIntersect(rect, view);
     }
 
-    /// <summary>Resolves each node's absolute position by walking its parent chain.</summary>
+    /// <summary>Resolves each node's absolute position by walking its parent chain, then applies node origin.</summary>
     private void ComputeLayout()
     {
         var index = Nodes.ToDictionary(n => n.Id);
         foreach (var n in Nodes)
-            n.AbsolutePosition = ResolveAbsolute(n, index, 0);
+        {
+            var raw = ResolveAbsolute(n, index, 0);
+            var origin = n.Origin ?? NodeOrigin;
+            if (origin.X == 0 && origin.Y == 0)
+            {
+                n.AbsolutePosition = raw;
+            }
+            else
+            {
+                var size = n.EffectiveSize;
+                n.AbsolutePosition = new XYPosition(raw.X - origin.X * size.Width, raw.Y - origin.Y * size.Height);
+            }
+        }
     }
 
     private static XYPosition ResolveAbsolute(Node n, Dictionary<string, Node> index, int depth)
@@ -416,7 +479,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     {
         var s = _connSource;
         var endPos = OppositePosition(s.Position);
-        var result = EdgePath.Bezier(s.Anchor.X, s.Anchor.Y, s.Position, _connEnd.X, _connEnd.Y, endPos);
+        var result = EdgePath.Compute(ConnectionLineType, s.Anchor.X, s.Anchor.Y, s.Position, _connEnd.X, _connEnd.Y, endPos);
         return result.Path;
     }
 
@@ -589,6 +652,8 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         // Pan: vertical scroll moves Y; Shift swaps to horizontal.
         var dx = e.ShiftKey ? e.DeltaY : e.DeltaX;
         var dy = e.ShiftKey ? 0 : e.DeltaY;
+        if (PanOnScrollMode == PanOnScrollMode.Horizontal) { dx = e.DeltaY; dy = 0; }
+        else if (PanOnScrollMode == PanOnScrollMode.Vertical) { dx = 0; dy = e.DeltaY; }
         _viewport = ClampViewport(_viewport with
         {
             X = _viewport.X - dx * PanOnScrollSpeed,
@@ -734,10 +799,11 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     private void ApplyBoxSelection()
     {
         var rect = SelectionRect();
+        var partial = SelectionMode == SelectionMode.Partial;
         foreach (var n in Nodes)
         {
             if (n.Hidden || !n.Selectable) continue;
-            var inside = RectsIntersect(rect, n.GetRect());
+            var inside = NodeIntersects(n.GetRect(), rect, partial);
             n.Selected = inside || (_selAdditive && _preSelected.Contains(n.Id));
         }
     }
@@ -768,7 +834,19 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
 
     private async Task DeleteSelectionAsync()
     {
-        var removedNodes = Nodes.Where(n => n.Selected).Select(n => n.Id).ToHashSet();
+        var nodesToDelete = Nodes.Where(n => n.Selected).ToList();
+        var edgesToDelete = Edges.Where(ed => ed.Selected).ToList();
+        if (nodesToDelete.Count == 0 && edgesToDelete.Count == 0) return;
+
+        if (OnBeforeDelete is not null && !OnBeforeDelete(nodesToDelete, edgesToDelete))
+            return;
+
+        var removedNodes = nodesToDelete.Select(n => n.Id).ToHashSet();
+        // Edges removed = explicitly selected edges plus those attached to removed nodes.
+        var removedEdges = Edges
+            .Where(ed => ed.Selected || removedNodes.Contains(ed.Source) || removedNodes.Contains(ed.Target))
+            .ToList();
+
         if (removedNodes.Count > 0)
         {
             Nodes.RemoveAll(n => removedNodes.Contains(n.Id));
@@ -777,9 +855,18 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
         Edges.RemoveAll(ed => ed.Selected);
 
         await NotifySelectionChangedAsync();
+        await RaiseDeleteEventsAsync(nodesToDelete, removedEdges);
         await NodesChanged.InvokeAsync(Nodes);
         await EdgesChanged.InvokeAsync(Edges);
         StateHasChanged();
+    }
+
+    private async Task RaiseDeleteEventsAsync(IReadOnlyList<Node> nodes, IReadOnlyList<Edge> edges)
+    {
+        if (nodes.Count > 0 && OnNodesDelete.HasDelegate) await OnNodesDelete.InvokeAsync(nodes);
+        if (edges.Count > 0 && OnEdgesDelete.HasDelegate) await OnEdgesDelete.InvokeAsync(edges);
+        if ((nodes.Count > 0 || edges.Count > 0) && OnDelete.HasDelegate)
+            await OnDelete.InvokeAsync(new SelectionChange(nodes, edges));
     }
 
     // ---- connection handling (called by Handle via IFlowContext) ----
@@ -871,6 +958,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
                     TargetHandle = targetHandle,
                     Type = DefaultEdgeType,
                 };
+                DefaultEdgeOptions?.ApplyTo(edge, DefaultEdgeType);
                 Edges.Add(edge);
                 _ = OnConnect.InvokeAsync(connection);
                 _ = EdgesChanged.InvokeAsync(Edges);
@@ -934,7 +1022,7 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     public bool IsValidConnectionTarget(string nodeId, string? handleId, HandleType handleType)
     {
         if (!_connecting) return false;
-        if (handleType == _connSource.Type) return false;          // source->source / target->target invalid
+        if (ConnectionMode == ConnectionMode.Strict && handleType == _connSource.Type) return false; // strict: source<->target only
         if (nodeId == _connSource.NodeId) return false;            // no self-connection
 
         if (IsValidConnection is not null)
@@ -1060,17 +1148,27 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     /// <summary>Removes the given nodes (and their connected edges) and/or edges.</summary>
     public async Task DeleteElementsAsync(IEnumerable<Node>? nodes = null, IEnumerable<Edge>? edges = null)
     {
-        var nodeIds = nodes?.Select(n => n.Id).ToHashSet() ?? [];
+        var nodeList = nodes?.ToList() ?? [];
+        var edgeList = edges?.ToList() ?? [];
+
+        if (OnBeforeDelete is not null && !OnBeforeDelete(nodeList, edgeList))
+            return;
+
+        var nodeIds = nodeList.Select(n => n.Id).ToHashSet();
+        var removedEdges = edgeList.ToList();
         if (nodeIds.Count > 0)
         {
+            removedEdges.AddRange(Edges.Where(e =>
+                (nodeIds.Contains(e.Source) || nodeIds.Contains(e.Target)) && !removedEdges.Contains(e)));
             Nodes.RemoveAll(n => nodeIds.Contains(n.Id));
             Edges.RemoveAll(e => nodeIds.Contains(e.Source) || nodeIds.Contains(e.Target));
         }
-        if (edges is not null)
+        if (edgeList.Count > 0)
         {
-            var edgeIds = edges.Select(e => e.Id).ToHashSet();
+            var edgeIds = edgeList.Select(e => e.Id).ToHashSet();
             Edges.RemoveAll(e => edgeIds.Contains(e.Id));
         }
+        await RaiseDeleteEventsAsync(nodeList, removedEdges);
         await NodesChanged.InvokeAsync(Nodes);
         await EdgesChanged.InvokeAsync(Edges);
         StateHasChanged();
@@ -1122,6 +1220,21 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
 
     public void CapturePointer(ElementReference element, long pointerId)
         => _ = _interop.SetPointerCaptureAsync(element, pointerId);
+
+    public void RegisterViewportPortal(object key, RenderFragment fragment)
+    {
+        // Only force a re-render when the portal is newly added; updating an existing
+        // key's fragment on every cascade render would cause an infinite render loop.
+        var isNew = !_viewportPortals.ContainsKey(key);
+        _viewportPortals[key] = fragment;
+        if (isNew) StateHasChanged();
+    }
+
+    public void UnregisterViewportPortal(object key)
+    {
+        if (_viewportPortals.Remove(key))
+            StateHasChanged();
+    }
 
     public void StartResize(string nodeId, ResizeDirection direction,
         double clientX, double clientY, double minWidth, double minHeight, bool keepAspectRatio)
@@ -1287,6 +1400,13 @@ public partial class FlowCanvas : IFlowContext, IAsyncDisposable
     }
 
     private static string Inv(double v) => v.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private string ColorModeClass => ColorMode switch
+    {
+        ColorMode.Dark => "blazorflow--dark",
+        ColorMode.System => "blazorflow--system",
+        _ => string.Empty,
+    };
 
     private static Models.Position ParsePosition(string? s) => s switch
     {

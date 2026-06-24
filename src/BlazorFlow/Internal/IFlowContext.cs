@@ -55,6 +55,12 @@ public interface IFlowContext
 
     /// <summary>Begins dragging a node from a custom <c>DragHandle</c> element.</summary>
     void BeginNodeDrag(Node node, Microsoft.AspNetCore.Components.Web.PointerEventArgs e);
+
+    /// <summary>Registers content to be rendered inside the (transformed) viewport layer.</summary>
+    void RegisterViewportPortal(object key, RenderFragment fragment);
+
+    /// <summary>Removes previously registered viewport-portal content.</summary>
+    void UnregisterViewportPortal(object key);
 }
 
 /// <summary>

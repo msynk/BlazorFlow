@@ -69,6 +69,12 @@ public class Node
     /// <summary>Optional z-index override.</summary>
     public int? ZIndex { get; set; }
 
+    /// <summary>
+    /// Optional per-node origin (0,0 = top-left, 0.5,0.5 = center, 1,1 = bottom-right) that
+    /// defines which point of the node <see cref="Position"/> refers to. Overrides the canvas default.
+    /// </summary>
+    public XYPosition? Origin { get; set; }
+
     // ---- internal measured state (populated via JS measurement) ----
 
     /// <summary>Measured dimensions in flow units. Empty until first measurement.</summary>

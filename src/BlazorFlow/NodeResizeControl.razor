@@ -1,0 +1,55 @@
+@namespace BlazorFlow
+
+@* A single resize control on one side/corner of a node, in contrast to NodeResizer which
+   renders all eight. Place inside a node's template. Provide ChildContent for a custom handle. *@
+
+@if (IsVisible)
+{
+    <div class="blazorflow__resize-handle @PositionClass @Class"
+         style="@HandleStyle"
+         @onpointerdown="OnDown"
+         @onpointerdown:stopPropagation="true">
+        @ChildContent
+    </div>
+}
+
+@code {
+    [CascadingParameter] private FlowNodeContext NodeContext { get; set; } = default!;
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    /// <summary>Which side/corner this control resizes.</summary>
+    [Parameter] public ResizeDirection Position { get; set; } = ResizeDirection.BottomRight;
+
+    /// <summary>Show the control. When null, it appears only while the node is selected.</summary>
+    [Parameter] public bool? Visible { get; set; }
+
+    [Parameter] public double MinWidth { get; set; } = 40;
+    [Parameter] public double MinHeight { get; set; } = 30;
+    [Parameter] public bool KeepAspectRatio { get; set; }
+    [Parameter] public string Color { get; set; } = "var(--bf-node-selected)";
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool IsVisible => Visible ?? NodeContext.Node.Selected;
+    private string HandleStyle => $"background:{Color};";
+
+    private string PositionClass => Position switch
+    {
+        ResizeDirection.TopLeft => "top-left",
+        ResizeDirection.TopRight => "top-right",
+        ResizeDirection.BottomLeft => "bottom-left",
+        ResizeDirection.BottomRight => "bottom-right",
+        ResizeDirection.Top => "top",
+        ResizeDirection.Right => "right",
+        ResizeDirection.Bottom => "bottom",
+        ResizeDirection.Left => "left",
+        _ => "bottom-right",
+    };
+
+    private void OnDown(PointerEventArgs e)
+    {
+        if (e.Button != 0) return;
+        Flow.StartResize(NodeContext.Node.Id, Position, e.ClientX, e.ClientY, MinWidth, MinHeight, KeepAspectRatio);
+    }
+}

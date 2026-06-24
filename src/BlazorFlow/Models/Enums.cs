@@ -43,6 +43,52 @@ public enum ModifierKey
 }
 
 /// <summary>
+/// Controls which handle pairings are allowed when connecting.
+/// </summary>
+public enum ConnectionMode
+{
+    /// <summary>Only source-to-target connections are valid (default).</summary>
+    Strict,
+
+    /// <summary>Any handle can connect to any other handle.</summary>
+    Loose
+}
+
+/// <summary>
+/// Color theme applied to the flow.
+/// </summary>
+public enum ColorMode
+{
+    Light,
+    Dark,
+
+    /// <summary>Follows the OS <c>prefers-color-scheme</c> setting.</summary>
+    System
+}
+
+/// <summary>
+/// How box selection decides whether a node is selected.
+/// </summary>
+public enum SelectionMode
+{
+    /// <summary>A node is selected if the selection box overlaps it at all.</summary>
+    Partial,
+
+    /// <summary>A node is selected only if it is fully enclosed by the selection box.</summary>
+    Full
+}
+
+/// <summary>
+/// Restricts the axis along which pan-on-scroll moves the viewport.
+/// </summary>
+public enum PanOnScrollMode
+{
+    Free,
+    Horizontal,
+    Vertical
+}
+
+/// <summary>
 /// Built-in background pattern variants.
 /// </summary>
 public enum BackgroundVariant

@@ -1,0 +1,16 @@
+@namespace BlazorFlow
+
+@* A styled, interactive toolbar for an edge. Place inside an EdgeLabelTemplate so it is
+   positioned at the edge's label point and rendered at constant screen size. *@
+
+<div class="blazorflow__edge-toolbar @Class" style="@Style"
+     @onpointerdown:stopPropagation="true"
+     @onclick:stopPropagation="true">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

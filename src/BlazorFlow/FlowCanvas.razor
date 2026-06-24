@@ -3,7 +3,7 @@
 @implements IAsyncDisposable
 
 <CascadingValue Value="(IFlowContext)this" IsFixed="false">
-    <div class="blazorflow @Class"
+    <div class="blazorflow @ColorModeClass @Class"
          style="@Style"
          tabindex="0"
          @ref="_paneRef"
@@ -88,6 +88,11 @@
             {
                 <div class="blazorflow__selection" style="@SelectionStyle()"></div>
             }
+
+            @foreach (var portal in _viewportPortals.Values)
+            {
+                @portal
+            }
         </div>
 
         @if (EdgeLabelTemplate is not null)
@@ -105,5 +110,10 @@
         }
 
         @ChildContent
+
+        @if (!HideAttribution)
+        {
+            <a class="blazorflow__attribution" href="https://github.com/msynk/BlazorFlow" target="_blank" rel="noopener noreferrer">BlazorFlow</a>
+        }
     </div>
 </CascadingValue>

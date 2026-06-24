@@ -1,0 +1,23 @@
+@namespace BlazorFlow
+@implements IDisposable
+
+@* Renders its content inside the transformed viewport layer, so it pans/zooms with the flow.
+   Position children in flow coordinates (e.g. with absolute positioning / transforms). *@
+
+@code {
+    [CascadingParameter] private IFlowContext Flow { get; set; } = default!;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private readonly object _key = new();
+
+    protected override void OnParametersSet()
+    {
+        if (ChildContent is not null)
+            Flow.RegisterViewportPortal(_key, ChildContent);
+        else
+            Flow.UnregisterViewportPortal(_key);
+    }
+
+    public void Dispose() => Flow.UnregisterViewportPortal(_key);
+}
